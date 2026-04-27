@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="40dp"
+    android:viewportWidth="100"
+    android:viewportHeight="40">
+    <path
+        android:fillColor="@color/switch_clouds"
+        android:pathData="M10,35 Q20,25 30,35 Q45,20 60,35 Q75,25 90,35 L90,40 L10,40 Z" />
+    <path
+        android:fillColor="@color/switch_back_clouds"
+        android:fillAlpha="0.5"
+        android:pathData="M0,38 Q15,28 25,38 Q40,18 55,38 Q70,28 85,38 L85,40 L0,40 Z" />
+</vector>

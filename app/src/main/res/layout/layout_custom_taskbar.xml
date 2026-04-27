@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:background="@drawable/taskbar_glass"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp">
+
+    <!-- Start Orb -->
+    <ImageButton
+        android:id="@+id/btn_start_orb"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_vista_start"
+        app:tint="@color/vista_red_accent"
+        android:contentDescription="Start Menu" />
+
+    <!-- Search Icon -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_search"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_search"
+        app:tint="@color/white"
+        android:contentDescription="Search" />
+
+    <!-- Widgets -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_widgets"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_slideshow_black_24dp"
+        app:tint="@color/white"
+        android:contentDescription="Widgets" />
+
+    <!-- Explorer Pinned -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_explorer"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_gallery_black_24dp"
+        app:tint="@color/vista_red_accent"
+        android:contentDescription="File Explorer" />
+
+    <!-- Browser Pinned -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_browser"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_camera_black_24dp"
+        app:tint="@color/vista_red_accent"
+        android:contentDescription="Browser" />
+
+    <!-- Notepad Pinned -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_notepad"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_edit"
+        app:tint="@color/vista_red_accent"
+        android:contentDescription="Notepad" />
+
+    <!-- Settings Pinned -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_settings"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_settings_black_24dp"
+        app:tint="@color/white"
+        android:contentDescription="Settings" />
+
+    <!-- Terminal Pinned -->
+    <ImageButton
+        android:id="@+id/btn_taskbar_terminal"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_media_play"
+        android:rotation="180"
+        app:tint="@color/white"
+        android:contentDescription="Terminal" />
+
+    <!-- Active Windows / Dynamic -->
+    <LinearLayout
+        android:id="@+id/taskbar_items_container"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_marginStart="8dp">
+        <!-- Dynamic items -->
+    </LinearLayout>
+
+    <!-- System Tray Group -->
+    <LinearLayout
+        android:id="@+id/taskbar_system_tray"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginStart="4dp">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/ic_menu_upload"
+            app:tint="@color/white"
+            android:rotation="180" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="8dp"
+            android:src="@android:drawable/stat_sys_phone_call"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_gallery_black_24dp"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="8dp"
+            android:src="@android:drawable/ic_lock_idle_low_battery"
+            app:tint="@color/white" />
+
+        <!-- Time and Date -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:gravity="end"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/taskbar_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4:42 PM"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/taskbar_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5/20/2026"
+                android:textColor="@color/text_dim"
+                android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+
+    <!-- Notification Dot -->
+    <FrameLayout
+        android:id="@+id/btn_notifications"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true">
+        <View
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:background="@drawable/sidebar_item_active"
+            android:backgroundTint="@color/vista_red_accent" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="3"
+            android:textColor="@color/white"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+</LinearLayout>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Top Left Inner Shadow -->
+    <item>
+        <shape>
+            <solid android:color="@color/neu_shadow" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <!-- Main Inset surface shifted down/right -->
+    <item android:top="3dp" android:left="3dp">
+        <shape>
+            <solid android:color="@color/neu_bg" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <!-- Bottom Right Inner highlight -->
+    <item android:top="4dp" android:left="4dp" android:bottom="1dp" android:right="1dp">
+        <shape>
+            <solid android:color="#20FFFFFF" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+</layer-list>

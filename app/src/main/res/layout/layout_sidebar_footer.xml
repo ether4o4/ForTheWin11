@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/sidebar_user_profile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/sidebar_item_active"
+        android:backgroundTint="#05FFFFFF"
+        android:gravity="center_vertical"
+        android:padding="12dp">
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/avatar_1"
+            android:scaleType="centerCrop" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4GAuteau"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Administrator"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/search_bar_glass"
+        android:layout_margin="8dp"
+        android:gravity="center"
+        android:padding="8dp">
+        <ImageButton android:id="@+id/btn_settings_quick" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_preferences" app:tint="@color/text_dim" />
+        <ImageButton android:id="@+id/btn_moon_quick" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginStart="16dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_lock_idle_alarm" app:tint="@color/text_dim" />
+        <ImageButton android:id="@+id/btn_lock_quick" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginStart="16dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_lock_lock" app:tint="@color/text_dim" />
+    </LinearLayout>
+
+</LinearLayout>

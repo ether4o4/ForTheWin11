@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_parent"
+    android:layout_width="290dp"
+    android:layout_height="300dp"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:padding="20dp">
+
+    <!-- Base Card -->
+    <View
+        android:id="@+id/base_card"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/card_3d_gradient"
+        android:elevation="10dp" />
+
+    <!-- Glass Layer -->
+    <View
+        android:id="@+id/glass_layer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="8dp"
+        android:background="@drawable/glass_layer_3d"
+        android:translationZ="25dp" />
+
+    <!-- Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="30dp"
+        android:paddingTop="100dp"
+        android:paddingEnd="60dp"
+        android:translationZ="26dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="STUNNING"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="3D Glassmorphism Card implemented in Android."
+            android:textColor="#CCFFFFFF"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <!-- Bottom Social Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="20dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:translationZ="26dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ic_vista_start"
+                android:backgroundTint="@color/card_gradient_end"
+                android:translationZ="40dp" />
+
+            <View
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ic_vista_start"
+                android:backgroundTint="@color/card_gradient_end"
+                android:translationZ="40dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Logo Circles (Top Right) -->
+    </LinearLayout>
+
+    <!-- Nested Logo Circles -->
+    <FrameLayout
+        android:layout_width="170dp"
+        android:layout_height="170dp"
+        android:layout_gravity="top|end"
+        android:clipChildren="false">
+
+        <View
+            android:layout_width="170dp"
+            android:layout_height="170dp"
+            android:background="@drawable/glass_panel"
+            android:alpha="0.2"
+            android:translationZ="20dp" />
+
+        <View
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="10dp"
+            android:background="@drawable/glass_panel"
+            android:alpha="0.3"
+            android:translationZ="40dp" />
+
+        <View
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="20dp"
+            android:background="@drawable/glass_panel"
+            android:alpha="0.4"
+            android:translationZ="60dp" />
+
+        <View
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="30dp"
+            android:background="@drawable/glass_panel"
+            android:alpha="0.5"
+            android:translationZ="80dp" />
+
+        <View
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="40dp"
+            android:background="@drawable/ic_vista_start"
+            android:backgroundTint="@color/white"
+            android:translationZ="100dp" />
+
+    </FrameLayout>
+
+</FrameLayout>

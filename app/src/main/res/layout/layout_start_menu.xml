@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="920dp"
+    android:layout_height="680dp"
+    android:background="@drawable/glass_panel_obsidian"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:elevation="30dp">
+
+    <!-- Top Navigation Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Unified Search Bar -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="1"
+            android:background="@drawable/search_bar_glass"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="@color/text_dim" />
+
+            <EditText
+                android:id="@+id/start_search_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:background="@null"
+                android:hint="Search for apps, settings, and files"
+                android:textColor="@color/white"
+                android:textColorHint="@color/text_dim"
+                android:textSize="16sp"
+                android:inputType="text"
+                android:importantForAutofill="no" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btn_all_apps_dropdown"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="24dp"
+            android:background="@drawable/search_bar_glass"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="All apps ▾"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+
+        <ImageButton
+            android:id="@+id/btn_power"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="24dp"
+            android:background="@drawable/search_bar_glass"
+            android:src="@android:drawable/ic_lock_power_off"
+            android:contentDescription="Power"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- Red Focus Line -->
+    <View
+        android:layout_width="50dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="-4dp"
+        android:background="@drawable/sidebar_item_active" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="32dp"
+        android:orientation="horizontal">
+
+        <!-- Sidebar Navigation -->
+        <LinearLayout
+            android:id="@+id/sidebar_container"
+            android:layout_width="220dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <include android:id="@+id/sidebar_all" layout="@layout/item_sidebar_category" />
+
+            <TextView android:id="@+id/sidebar_pinned" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="Pinned" android:textColor="@color/text_dim" android:textSize="15sp" />
+            <TextView android:id="@+id/sidebar_productivity" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="Productivity" android:textColor="@color/text_dim" android:textSize="15sp" />
+            <TextView android:id="@+id/sidebar_development" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="&lt;/&gt; Development" android:textColor="@color/text_dim" android:textSize="15sp" />
+            <TextView android:id="@+id/sidebar_media" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="Media" android:textColor="@color/text_dim" android:textSize="15sp" />
+            <TextView android:id="@+id/sidebar_utilities" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="Utilities" android:textColor="@color/text_dim" android:textSize="15sp" />
+            <TextView android:id="@+id/sidebar_system" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="System" android:textColor="@color/text_dim" android:textSize="15sp" />
+            <TextView android:id="@+id/sidebar_folders" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:paddingStart="20dp" android:text="Folders" android:textColor="@color/text_dim" android:textSize="15sp" />
+
+            <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <!-- User Profile (Matches Image) -->
+            <LinearLayout
+                android:id="@+id/sidebar_user_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/avatar_1"
+                    android:scaleType="centerCrop" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4GAuteau" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Administrator" android:textColor="@color/text_dim" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Bottom Utilities -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="8dp">
+                <ImageButton android:id="@+id/btn_settings_quick" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_preferences" app:tint="@color/text_dim" />
+                <ImageButton android:id="@+id/btn_moon_quick" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="20dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_lock_idle_alarm" app:tint="@color/text_dim" />
+                <ImageButton android:id="@+id/btn_lock_quick" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="20dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_lock_lock" app:tint="@color/text_dim" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Dynamic Content (Pinned, Recommended, Quick Access) -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="32dp"
+            android:scrollbarThumbVertical="@color/vista_red_accent"
+            android:scrollbarSize="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Pinned Section -->
+                <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Pinned" android:textColor="@color/white" android:textStyle="bold" android:textSize="18sp" />
+                    <TextView android:id="@+id/btn_show_more_pinned" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Show more >" android:textColor="@color/text_dim" android:textSize="13sp" />
+                </RelativeLayout>
+
+                <GridLayout
+                    android:id="@+id/pinned_apps_grid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="6"
+                    android:layout_marginBottom="40dp">
+                </GridLayout>
+
+                <!-- Recommended Section -->
+                <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Recommended" android:textColor="@color/white" android:textStyle="bold" android:textSize="18sp" />
+                    <TextView android:id="@+id/btn_show_more_recommended" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Show more >" android:textColor="@color/text_dim" android:textSize="13sp" />
+                </RelativeLayout>
+
+                <LinearLayout
+                    android:id="@+id/recommended_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="40dp">
+                </LinearLayout>
+
+                <!-- Quick Access -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Quick Access" android:textColor="@color/white" android:textStyle="bold" android:textSize="18sp" android:layout_marginBottom="20dp" />
+
+                <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none">
+                    <LinearLayout android:id="@+id/quick_access_container" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" />
+                </HorizontalScrollView>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</LinearLayout>

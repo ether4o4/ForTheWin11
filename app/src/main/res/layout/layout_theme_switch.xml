@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/theme_switch_container"
+    android:layout_width="120dp"
+    android:layout_height="54dp"
+    android:background="@drawable/glass_panel"
+    android:backgroundTint="@color/switch_day_bg"
+    android:clipChildren="false"
+    android:padding="4dp">
+
+    <!-- Stars (Hidden in day) -->
+    <LinearLayout
+        android:id="@+id/stars_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:gravity="center"
+        android:orientation="horizontal">
+        <View android:layout_width="2dp" android:layout_height="2dp" android:background="@color/white" android:layout_margin="10dp" />
+        <View android:layout_width="3dp" android:layout_height="3dp" android:background="@color/white" android:layout_margin="15dp" />
+        <View android:layout_width="2dp" android:layout_height="2dp" android:background="@color/white" android:layout_margin="10dp" />
+    </LinearLayout>
+
+    <!-- Clouds (Visible in day) -->
+    <ImageView
+        android:id="@+id/clouds_image"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:layout_gravity="bottom"
+        android:src="@drawable/ic_theme_clouds"
+        android:contentDescription="Clouds" />
+
+    <!-- Handle Circle Container -->
+    <FrameLayout
+        android:id="@+id/switch_handle"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:background="@drawable/glass_panel"
+        android:backgroundTint="#20FFFFFF">
+
+        <!-- Sun -->
+        <ImageView
+            android:id="@+id/sun_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:src="@drawable/ic_theme_sun"
+            android:contentDescription="Sun" />
+
+        <!-- Moon (Hidden in day) -->
+        <ImageView
+            android:id="@+id/moon_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:src="@drawable/ic_theme_moon"
+            android:alpha="0"
+            android:translationX="46dp"
+            android:contentDescription="Moon" />
+
+    </FrameLayout>
+
+</FrameLayout>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="1920dp"
+    android:height="1080dp"
+    android:viewportWidth="1920"
+    android:viewportHeight="1080">
+
+    <!-- Deep Obsidian Base -->
+    <path
+        android:pathData="M0,0h1920v1080h-1920z"
+        android:fillColor="#FF050505" />
+
+    <!-- Red Energy Swirl 1 -->
+    <path
+        android:pathData="M-200,1080 C400,400 1200,1200 2100,300"
+        android:strokeWidth="160"
+        android:strokeAlpha="0.5">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="1080"
+                android:endX="1920"
+                android:endY="300"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFFF3B3B" />
+                <item android:offset="1" android:color="#00FF3B3B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Red Energy Swirl 2 -->
+    <path
+        android:pathData="M-100,1180 C600,200 1400,1000 2200,-100"
+        android:strokeWidth="100"
+        android:strokeAlpha="0.3">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="1180"
+                android:endX="1920"
+                android:endY="-100"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFFF3B3B" />
+                <item android:offset="1" android:color="#00FF3B3B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Background Accents -->
+    <path
+        android:pathData="M0,0h1920v1080h-1920z"
+        android:fillAlpha="0.05"
+        android:fillColor="#FFFFFF" />
+
+</vector>
