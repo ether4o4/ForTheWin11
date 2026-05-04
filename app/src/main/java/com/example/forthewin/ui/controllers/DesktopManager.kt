@@ -162,7 +162,6 @@ class DesktopManager(
         wiggle.duration = 150
         wiggle.repeatMode = android.animation.ObjectAnimator.REVERSE
         wiggle.repeatCount = android.animation.ObjectAnimator.INFINITE
-        wiggle.tag = "wiggle"
         wiggle.start()
     }
 
