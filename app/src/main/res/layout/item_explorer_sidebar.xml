@@ -1,36 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:layout_height="36dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center_vertical"
-    android:padding="8dp"
-    android:background="?attr/selectableItemBackground">
-
-    <!-- Active Indicator (Visible only if active) -->
-    <View
-        android:id="@+id/active_indicator"
-        android:layout_width="2dp"
-        android:layout_height="match_parent"
-        android:background="@color/electric_blue"
-        android:visibility="gone" />
+    android:paddingStart="12dp"
+    android:paddingEnd="8dp">
 
     <ImageView
         android:id="@+id/sidebar_icon"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="12dp"
-        android:src="@drawable/ic_gallery_black_24dp"
-        android:contentDescription="Sidebar Icon"
-        android:tint="#B3FFFFFF" />
+        android:scaleType="fitCenter"
+        android:layout_marginEnd="10dp" />
 
     <TextView
         android:id="@+id/sidebar_label"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:text="Documents"
-        android:textColor="#B3FFFFFF"
-        android:textSize="14sp" />
+        android:layout_weight="1"
+        android:textColor="#FF000000"
+        android:textSize="12sp"
+        android:singleLine="true"
+        android:ellipsize="end" />
+
+    <!-- Active indicator (shown when selected) -->
+    <View
+        android:id="@+id/active_indicator"
+        android:layout_width="3dp"
+        android:layout_height="16dp"
+        android:background="@drawable/win11_active_indicator"
+        android:visibility="gone" />
 
 </LinearLayout>

@@ -338,14 +338,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openFileExplorer() {
-        openFloatingWindow("File Explorer", R.drawable.ic_gallery_black_24dp) { container ->
+        openFloatingWindow("File Explorer", R.drawable.ic_win11_folder) { container ->
             val explorerView = layoutInflater.inflate(R.layout.layout_file_explorer, container, false)
             container.addView(explorerView)
 
-            // Populate Sidebar
+            // Sidebar — black text on white bg, no tint
             val sidebarContainer = explorerView.findViewById<LinearLayout>(R.id.explorer_sidebar_container)
             val sidebarItems = listOf(
-                Pair("Home", android.R.drawable.ic_menu_myplaces),
+                Pair("Home", R.drawable.ic_win11_folder),
                 Pair("Gallery", android.R.drawable.ic_menu_gallery),
                 Pair("OneDrive", android.R.drawable.ic_menu_upload),
                 Pair("Desktop", android.R.drawable.ic_menu_view),
@@ -354,65 +354,83 @@ class MainActivity : AppCompatActivity() {
                 Pair("Pictures", android.R.drawable.ic_menu_gallery),
                 Pair("Music", android.R.drawable.ic_lock_silent_mode_off),
                 Pair("Videos", android.R.drawable.ic_menu_slideshow),
-                Pair("This PC", R.drawable.ic_gallery_black_24dp),
-                Pair("Network", R.drawable.ic_camera_black_24dp)
+                Pair("This PC", android.R.drawable.ic_menu_info_details),
+                Pair("Network", android.R.drawable.ic_menu_share)
             )
-
             for (item in sidebarItems) {
-                val itemView = layoutInflater.inflate(R.layout.item_explorer_sidebar, sidebarContainer, false)
-                itemView.findViewById<TextView>(R.id.sidebar_label).text = item.first
-                itemView.findViewById<ImageView>(R.id.sidebar_icon).setImageResource(item.second)
+                val v = layoutInflater.inflate(R.layout.item_explorer_sidebar, sidebarContainer, false)
+                v.findViewById<TextView>(R.id.sidebar_label).text = item.first
+                v.findViewById<ImageView>(R.id.sidebar_icon).setImageResource(item.second)
                 if (item.first == "Home") {
-                    itemView.findViewById<View>(R.id.active_indicator).visibility = View.VISIBLE
-                    itemView.findViewById<TextView>(R.id.sidebar_label).setTextColor(Color.WHITE)
-                    itemView.findViewById<ImageView>(R.id.sidebar_icon).setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null))
+                    v.findViewById<View>(R.id.active_indicator).visibility = View.VISIBLE
+                    v.setBackgroundColor(0x110078D4)
                 }
-                sidebarContainer.addView(itemView)
+                sidebarContainer.addView(v)
             }
 
-            // Populate Quick Access
-            val quickAccessGrid = explorerView.findViewById<GridLayout>(R.id.quick_access_grid)
-            val folders = listOf("Desktop", "Documents", "Downloads", "Pictures", "Music", "Videos")
-            for (folder in folders) {
-                val itemView = layoutInflater.inflate(R.layout.item_recommended_file, quickAccessGrid, false)
-                val params = GridLayout.LayoutParams()
-                params.width = (100 * resources.displayMetrics.density).toInt()
-                itemView.layoutParams = params
-                itemView.findViewById<TextView>(R.id.file_name).text = folder
-                itemView.findViewById<TextView>(R.id.file_subtitle).text = "Stored locally"
-                val iconImg = itemView.findViewById<ImageView>(R.id.file_icon)
-                iconImg.setImageResource(R.drawable.ic_gallery_black_24dp)
-                iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
-                quickAccessGrid.addView(itemView)
+            // Quick access grid — 2 col, folder icon + name + "Stored locally"
+            val quickGrid = explorerView.findViewById<GridLayout>(R.id.quick_access_grid)
+            val folders = listOf(
+                Pair("Desktop", 0xFFE74856.toInt()),
+                Pair("Documents", 0xFFFFB900.toInt()),
+                Pair("Downloads", 0xFF00B294.toInt()),
+                Pair("Pictures", 0xFFE74856.toInt()),
+                Pair("Music", 0xFFFFB900.toInt()),
+                Pair("Videos", 0xFF8764B8.toInt())
+            )
+            for ((name, color) in folders) {
+                val v = layoutInflater.inflate(R.layout.item_recommended_file, quickGrid, false)
+                val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                val lp = GridLayout.LayoutParams(spec, spec)
+                lp.width = 0
+                v.layoutParams = lp
+                v.findViewById<TextView>(R.id.file_name).text = name
+                v.findViewById<TextView>(R.id.file_subtitle).text = "Stored locally"
+                val icon = v.findViewById<ImageView>(R.id.file_icon)
+                icon.setImageResource(R.drawable.ic_win11_folder)
+                icon.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+                quickGrid.addView(v)
             }
 
-            // Populate Recent
+            // Recent files
             val recentList = explorerView.findViewById<LinearLayout>(R.id.recent_files_list)
             val recents = fileIndexer.getRecentFiles(8)
-            for (file in recents) {
-                val itemView = layoutInflater.inflate(R.layout.item_recommended_file, recentList, false)
-                itemView.findViewById<TextView>(R.id.file_name).text = file.name
-                itemView.findViewById<TextView>(R.id.file_subtitle).text = "${file.extension.uppercase()} File"
-                val iconImg = itemView.findViewById<ImageView>(R.id.file_icon)
-                iconImg.setImageResource(android.R.drawable.ic_menu_edit)
-                iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
-                recentList.addView(itemView)
+            if (recents.isEmpty()) {
+                val empty = TextView(this)
+                empty.text = "After you've opened some files, we'll show the most recent ones here."
+                empty.setTextColor(0x88000000.toInt())
+                empty.textSize = 12f
+                recentList.addView(empty)
+            } else {
+                for (file in recents) {
+                    val v = layoutInflater.inflate(R.layout.item_recommended_file, recentList, false)
+                    v.findViewById<TextView>(R.id.file_name).text = file.name
+                    v.findViewById<TextView>(R.id.file_subtitle).text = "${file.extension.uppercase()} · Documents"
+                    v.findViewById<ImageView>(R.id.file_icon).setImageResource(android.R.drawable.ic_menu_edit)
+                    recentList.addView(v)
+                }
             }
+
+            // Item count
+            explorerView.findViewById<TextView>(R.id.explorer_item_count)?.text = "${folders.size} items"
         }
     }
 
     private fun openNotepad() {
         openFloatingWindow("Notepad", android.R.drawable.ic_menu_edit) { container ->
+            container.setBackgroundColor(Color.WHITE)
             val editText = EditText(this)
             editText.layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
             editText.hint = "Start typing..."
-            editText.setTextColor(Color.WHITE)
+            editText.setTextColor(Color.BLACK)
+            editText.setHintTextColor(0x88000000.toInt())
             editText.setBackgroundColor(Color.TRANSPARENT)
             editText.gravity = android.view.Gravity.TOP
-            editText.setPadding(32, 32, 32, 32)
+            editText.setPadding(24, 24, 24, 24)
+            editText.textSize = 14f
             container.addView(editText)
         }
     }
@@ -529,12 +547,16 @@ class MainActivity : AppCompatActivity() {
         }
         
         grid.removeAllViews()
+        grid.columnCount = 4
         val filtered = allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }.take(12)
         for (app in filtered) {
             val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
+            val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            val lp = GridLayout.LayoutParams(spec, spec)
+            lp.width = 0
+            itemView.layoutParams = lp
             itemView.findViewById<TextView>(R.id.icon_label).text = app.label
-            val iconImg = itemView.findViewById<ImageView>(R.id.icon_image)
-            iconImg.setImageDrawable(app.bestIcon())
+            itemView.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
             itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
             grid.addView(itemView)
         }
@@ -556,19 +578,23 @@ class MainActivity : AppCompatActivity() {
         val start = binding.appBarMain.contentMain.startMenuPanel ?: return
         if (show) {
             start.pinnedAppsGrid.removeAllViews()
+            start.pinnedAppsGrid.columnCount = 4
             for (app in allInstalledApps) {
                 val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, start.pinnedAppsGrid, false)
+                val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                val lp = GridLayout.LayoutParams(spec, spec)
+                lp.width = 0
+                itemView.layoutParams = lp
                 itemView.findViewById<TextView>(R.id.icon_label).text = app.label
-                val iconImg = itemView.findViewById<ImageView>(R.id.icon_image)
-                iconImg.setImageDrawable(app.bestIcon())
+                itemView.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
                 itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
                 start.pinnedAppsGrid.addView(itemView)
             }
-            start.btnAllAppsDropdown.text = "Pinned ▾"
+            start.btnAllAppsDropdown.text = "Pinned  ‹"
             start.btnAllAppsDropdown.setOnClickListener { showAllApps(false) }
         } else {
             populatePinnedApps(start)
-            start.btnAllAppsDropdown.text = "All apps ▾"
+            start.btnAllAppsDropdown.text = "All apps  ›"
             start.btnAllAppsDropdown.setOnClickListener { showAllApps(true) }
         }
     }
@@ -646,14 +672,23 @@ class MainActivity : AppCompatActivity() {
     private fun populatePinnedApps(binding: LayoutStartMenuBinding) {
         val grid = binding.pinnedAppsGrid
         grid.removeAllViews()
-        val targetApps = listOf("File Explorer", "Microsoft Edge", "Notepad", "Photos", "Settings", "Calculator")
-        val pinned = allInstalledApps.filter { it.label in targetApps }.take(6)
-        
+        grid.columnCount = 4
+
+        // Show pinned known apps first, then fill with installed apps up to 12
+        val targetApps = listOf("File Explorer", "Microsoft Edge", "Notepad", "Photos", "Settings", "Calculator", "Camera", "Maps", "Clock", "YouTube", "Gmail", "Chrome")
+        val pinned = allInstalledApps.filter { it.label in targetApps }
+            .plus(allInstalledApps.filter { it.label !in targetApps })
+            .distinctBy { it.packageName }
+            .take(12)
+
         for (app in pinned) {
             val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
+            val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            val lp = GridLayout.LayoutParams(spec, spec)
+            lp.width = 0
+            itemView.layoutParams = lp
             itemView.findViewById<TextView>(R.id.icon_label).text = app.label
-            val iconImg = itemView.findViewById<ImageView>(R.id.icon_image)
-            iconImg.setImageDrawable(app.bestIcon())
+            itemView.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
             itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
             grid.addView(itemView)
         }
