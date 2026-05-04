@@ -1,21 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Win11 Ultra-glass taskbar pill — layered shadow, frosted white, specular highlight -->
+<!-- Win11 taskbar — squared, full-width, light theme -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="58dp"
+    android:layout_height="52dp"
     android:clipChildren="false"
     android:clipToPadding="false">
 
-    <!-- Main glass pill -->
+    <!-- Top border line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#14000000"
+        android:layout_gravity="top" />
+
+    <!-- Main squared bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/taskbar_pill_glass"
+        android:background="#FFFFFFFF"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="8dp"
-        android:paddingEnd="8dp">
+        android:paddingEnd="8dp"
+        android:layout_marginTop="1dp">
 
         <!-- ── LEFT: Start + Search ──────────────────────────────── -->
         <LinearLayout
@@ -34,10 +42,11 @@
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_start"
+                    app:tint="#FF0078D4"
                     android:contentDescription="Start" />
             </FrameLayout>
 
@@ -49,7 +58,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
-                android:background="@drawable/search_bar_glass_light"
+                android:background="@drawable/search_bar_light"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="10dp"
@@ -60,6 +69,7 @@
                     android:layout_width="14dp"
                     android:layout_height="14dp"
                     android:src="@drawable/ic_win11_search"
+                    app:tint="#88000000"
                     android:contentDescription="Search" />
                 <TextView
                     android:layout_width="wrap_content"
@@ -93,6 +103,7 @@
                     android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_taskview"
+                    app:tint="#FF444444"
                     android:contentDescription="Task View" />
             </FrameLayout>
 
@@ -141,6 +152,7 @@
                     android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_settings"
+                    app:tint="#FF444444"
                     android:contentDescription="Settings" />
             </FrameLayout>
 
@@ -182,6 +194,7 @@
                     android:layout_height="15dp"
                     android:src="@android:drawable/ic_menu_upload"
                     android:rotation="180"
+                    app:tint="#FF444444"
                     android:contentDescription="Network" />
 
                 <!-- Volume -->
@@ -191,6 +204,7 @@
                     android:layout_height="15dp"
                     android:layout_marginStart="5dp"
                     android:src="@android:drawable/ic_lock_silent_mode_off"
+                    app:tint="#FF444444"
                     android:contentDescription="Volume" />
 
                 <!-- Battery -->
@@ -214,7 +228,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="12:00 PM"
-                        android:textColor="#FF000000"
+                        android:textColor="#FF1A1A1A"
                         android:textSize="12sp"
                         android:fontFamily="sans-serif-medium"
                         android:textStyle="bold" />

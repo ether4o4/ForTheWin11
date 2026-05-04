@@ -18,6 +18,8 @@ object ThemeManager {
     private const val PREFS = "theme_prefs"
     private const val KEY_DARK   = "is_dark"
     private const val KEY_RED    = "accent_red"
+    private const val KEY_START_ICON_SIZE = "start_icon_size"     // dp: 32, 42, 54
+    private const val KEY_START_COLUMNS  = "start_columns"       // pinned grid columns: 3, 4, 5
 
     // Colors
     const val BLUE_ACCENT  = 0xFF0078D4.toInt()
@@ -56,4 +58,14 @@ object ThemeManager {
 
     fun taskbarBg(ctx: Context): Int =
         if (isDark(ctx)) 0xE6202023.toInt() else 0xFFFFFFFF.toInt()
+
+    // Start menu icon size (dp)
+    fun startIconSize(ctx: Context): Int = prefs(ctx).getInt(KEY_START_ICON_SIZE, 42)
+    fun setStartIconSize(ctx: Context, dp: Int) =
+        prefs(ctx).edit().putInt(KEY_START_ICON_SIZE, dp).apply()
+
+    // Start menu pinned grid columns
+    fun startColumns(ctx: Context): Int = prefs(ctx).getInt(KEY_START_COLUMNS, 3)
+    fun setStartColumns(ctx: Context, cols: Int) =
+        prefs(ctx).edit().putInt(KEY_START_COLUMNS, cols).apply()
 }

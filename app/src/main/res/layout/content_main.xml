@@ -41,15 +41,12 @@
         android:clipChildren="false"
         android:clipToPadding="false" />
 
-    <!-- Taskbar -->
+    <!-- Taskbar — squared, full-width, no margins -->
     <include
         android:id="@+id/custom_taskbar"
         layout="@layout/layout_custom_taskbar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_height="52dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

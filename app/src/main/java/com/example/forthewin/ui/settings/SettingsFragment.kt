@@ -37,6 +37,7 @@ class SettingsFragment : Fragment() {
         setupThemeSwitch()
         setupIconPackPicker()
         setupThemePicker()
+        setupStartMenuSettings()
 
         return root
     }
@@ -137,6 +138,67 @@ class SettingsFragment : Fragment() {
             val packs = iconPackManager.getInstalledPacks()
             val name = packs.firstOrNull { it.second == activePack }?.first ?: activePack
             "Icon Pack: $name"
+        }
+    }
+
+    // ── Start Menu settings ────────────────────────────────────────
+    private fun setupStartMenuSettings() {
+        val ctx = requireContext()
+        val root = binding.root
+        val accent = ThemeManager.accent(ctx)
+
+        // Icon size buttons
+        val btnSmall  = root.findViewById<View>(R.id.btn_icon_small)
+        val btnMedium = root.findViewById<View>(R.id.btn_icon_medium)
+        val btnLarge  = root.findViewById<View>(R.id.btn_icon_large)
+
+        fun updateIconSizeButtons() {
+            val current = ThemeManager.startIconSize(ctx)
+            val a = ThemeManager.accent(ctx)
+            btnSmall?.backgroundTintList  = ColorStateList.valueOf(if (current == 32) a else 0x44FFFFFF)
+            btnMedium?.backgroundTintList = ColorStateList.valueOf(if (current == 42) a else 0x44FFFFFF)
+            btnLarge?.backgroundTintList  = ColorStateList.valueOf(if (current == 54) a else 0x44FFFFFF)
+        }
+        updateIconSizeButtons()
+
+        btnSmall?.setOnClickListener {
+            ThemeManager.setStartIconSize(ctx, 32); updateIconSizeButtons()
+            (requireActivity() as? MainActivity)?.refreshStartMenu()
+        }
+        btnMedium?.setOnClickListener {
+            ThemeManager.setStartIconSize(ctx, 42); updateIconSizeButtons()
+            (requireActivity() as? MainActivity)?.refreshStartMenu()
+        }
+        btnLarge?.setOnClickListener {
+            ThemeManager.setStartIconSize(ctx, 54); updateIconSizeButtons()
+            (requireActivity() as? MainActivity)?.refreshStartMenu()
+        }
+
+        // Column count buttons
+        val btnCols3 = root.findViewById<View>(R.id.btn_cols_3)
+        val btnCols4 = root.findViewById<View>(R.id.btn_cols_4)
+        val btnCols5 = root.findViewById<View>(R.id.btn_cols_5)
+
+        fun updateColButtons() {
+            val current = ThemeManager.startColumns(ctx)
+            val a = ThemeManager.accent(ctx)
+            btnCols3?.backgroundTintList = ColorStateList.valueOf(if (current == 3) a else 0x44FFFFFF)
+            btnCols4?.backgroundTintList = ColorStateList.valueOf(if (current == 4) a else 0x44FFFFFF)
+            btnCols5?.backgroundTintList = ColorStateList.valueOf(if (current == 5) a else 0x44FFFFFF)
+        }
+        updateColButtons()
+
+        btnCols3?.setOnClickListener {
+            ThemeManager.setStartColumns(ctx, 3); updateColButtons()
+            (requireActivity() as? MainActivity)?.refreshStartMenu()
+        }
+        btnCols4?.setOnClickListener {
+            ThemeManager.setStartColumns(ctx, 4); updateColButtons()
+            (requireActivity() as? MainActivity)?.refreshStartMenu()
+        }
+        btnCols5?.setOnClickListener {
+            ThemeManager.setStartColumns(ctx, 5); updateColButtons()
+            (requireActivity() as? MainActivity)?.refreshStartMenu()
         }
     }
 

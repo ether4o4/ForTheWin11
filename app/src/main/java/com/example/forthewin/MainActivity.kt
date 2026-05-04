@@ -141,6 +141,7 @@ class MainActivity : AppCompatActivity() {
         setupTaskbar()
         setupControlCenter()
         applyThemeToControlCenter()
+        applyThemeToTaskbar()
         setupGestures()
 
         widgetHostManager.startListening()
@@ -478,6 +479,53 @@ class MainActivity : AppCompatActivity() {
         ThemeManager.setDark(this, dark)
         ThemeManager.setRedAccent(this, redAccent)
         applyThemeToControlCenter()
+        applyThemeToTaskbar()
+        applyThemeToStartMenu()
+    }
+
+    private fun applyThemeToTaskbar() {
+        val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root ?: return
+        val isDark = ThemeManager.isDark(this)
+        val bg = if (isDark) 0xE6202023.toInt() else 0xFFFFFFFF.toInt()
+        val textPri = if (isDark) 0xFFFFFFFF.toInt() else 0xFF1A1A1A.toInt()
+        val textSec = if (isDark) 0x88FFFFFF.toInt() else 0x88000000.toInt()
+        val iconTint = if (isDark) 0xFFFFFFFF.toInt() else 0xFF444444.toInt()
+
+        // Find the main LinearLayout inside FrameLayout (skip top border View)
+        if (taskbarRoot is FrameLayout) {
+            for (i in 0 until taskbarRoot.childCount) {
+                val child = taskbarRoot.getChildAt(i)
+                if (child is LinearLayout) {
+                    child.setBackgroundColor(bg)
+                    break
+                }
+            }
+        }
+
+        // Clock & date
+        taskbarRoot.findViewById<TextView>(R.id.taskbar_time)?.setTextColor(textPri)
+        taskbarRoot.findViewById<TextView>(R.id.taskbar_date)?.setTextColor(textSec)
+
+        // Tray icons
+        taskbarRoot.findViewById<ImageView>(R.id.tray_network)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
+        taskbarRoot.findViewById<ImageView>(R.id.tray_volume)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
+    }
+
+    private fun applyThemeToStartMenu() {
+        val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
+        if (sm.root.visibility != View.VISIBLE) return
+        // Refresh items with current theme
+        populateAllAppsList(sm)
+        populatePinnedApps(sm)
+        populateRecommended(sm)
+    }
+
+    fun refreshStartMenu() {
+        val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
+        if (sm.root.visibility == View.VISIBLE) {
+            populatePinnedApps(sm)
+            populateAllAppsList(sm)
+        }
     }
 
     // ── Notification panel ────────────────────────────────────────────
@@ -902,11 +950,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun populatePinnedApps(start: LayoutStartMenuBinding) {
         val grid = start.pinnedAppsGrid
-        grid.removeAllViews(); grid.columnCount = 3
+        grid.removeAllViews()
+        val cols = ThemeManager.startColumns(this)
+        grid.columnCount = cols
+        val maxItems = cols * 3 // 3 rows of pinned apps
         val priority = listOf("File Explorer","Microsoft Edge","Notepad","Photos","Settings","Calculator","Camera","Maps","Clock","YouTube","Gmail","Chrome")
         allInstalledApps.filter { it.label in priority }
             .plus(allInstalledApps.filter { it.label !in priority })
-            .distinctBy { it.packageName }.take(9)
+            .distinctBy { it.packageName }.take(maxItems)
             .forEach { app -> addAppToGrid(grid, app) }
     }
 
@@ -915,8 +966,16 @@ class MainActivity : AppCompatActivity() {
         val rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
         val colSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
         v.layoutParams = GridLayout.LayoutParams(rowSpec, colSpec).apply { width = 0 }
-        v.findViewById<TextView>(R.id.icon_label).text = app.label
-        v.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
+        val label = v.findViewById<TextView>(R.id.icon_label)
+        label.text = app.label
+        label.setTextColor(0xFF1A1A1A.toInt())  // dark text for light start menu
+        label.setShadowLayer(0f, 0f, 0f, 0)     // remove shadow for light bg
+        val iconView = v.findViewById<ImageView>(R.id.icon_image)
+        val iconSizeDp = ThemeManager.startIconSize(this)
+        val iconSizePx = (iconSizeDp * resources.displayMetrics.density).toInt()
+        iconView.layoutParams.width = iconSizePx
+        iconView.layoutParams.height = iconSizePx
+        iconView.setImageDrawable(app.bestIcon())
         v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
         v.setOnLongClickListener { showAppContextMenu(v, app); true }
         grid.addView(v)

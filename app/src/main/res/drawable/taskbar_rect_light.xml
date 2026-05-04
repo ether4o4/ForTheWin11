@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Squared taskbar — stretches full width, no rounded corners -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Top border line for definition -->
+    <item android:bottom="-1dp">
+        <shape>
+            <solid android:color="#FFFFFFFF" />
+            <stroke android:width="0dp" android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- Main body -->
+    <item>
+        <shape>
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <!-- Top border line -->
+    <item android:bottom="-1dp">
+        <shape>
+            <size android:height="1dp" />
+            <solid android:color="#14000000" />
+        </shape>
+    </item>
+</layer-list>
