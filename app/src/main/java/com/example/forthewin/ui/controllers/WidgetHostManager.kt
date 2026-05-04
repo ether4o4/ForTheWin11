@@ -3,12 +3,10 @@ package com.example.forthewin.ui.controllers
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProviderInfo
-import android.content.ComponentName
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.util.SizeF
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
@@ -23,125 +21,111 @@ class WidgetHostManager(private val activity: ComponentActivity) {
     private val appWidgetManager = AppWidgetManager.getInstance(activity)
     private val appWidgetHost = AppWidgetHost(activity, APPWIDGET_HOST_ID)
 
-    // Track the pending widget ID during the pick/bind/configure flow
     var pendingWidgetId: Int = -1
         private set
 
     fun startListening() {
-        try {
-            appWidgetHost.startListening()
-        } catch (e: Exception) {
-            Log.e(TAG, "startListening failed", e)
-        }
+        try { appWidgetHost.startListening() }
+        catch (e: Exception) { Log.e(TAG, "startListening", e) }
     }
 
     fun stopListening() {
-        try {
-            appWidgetHost.stopListening()
-        } catch (e: Exception) {
-            Log.e(TAG, "stopListening failed", e)
-        }
+        try { appWidgetHost.stopListening() }
+        catch (e: Exception) { Log.e(TAG, "stopListening", e) }
     }
 
-    /**
-     * Step 1: Launch the system widget picker.
-     * After user picks a widget, the result comes back with an appWidgetId.
-     */
+    /** Launch the system widget picker */
     fun pickWidget(launcher: ActivityResultLauncher<Intent>) {
-        pendingWidgetId = appWidgetHost.allocateAppWidgetId()
-        val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingWidgetId)
-            // Tell Android we want the list of bindable widgets
-            putParcelableArrayListExtra(AppWidgetManager.EXTRA_CUSTOM_INFO, ArrayList())
-            putParcelableArrayListExtra(AppWidgetManager.EXTRA_CUSTOM_EXTRAS, ArrayList())
+        try {
+            pendingWidgetId = appWidgetHost.allocateAppWidgetId()
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingWidgetId)
+            }
+            launcher.launch(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "pickWidget failed", e)
+            safeDeleteId(pendingWidgetId)
+            pendingWidgetId = -1
         }
-        launcher.launch(pickIntent)
     }
 
     /**
-     * Step 2: After the picker returns, try to bind the widget.
-     * Returns true if bound (or already bound). Returns false if we need to
-     * request BIND_APPWIDGET permission from the user.
+     * Check if widget needs a configure activity. Returns true if launched.
      */
-    fun tryBindWidget(appWidgetId: Int, bindLauncher: ActivityResultLauncher<Intent>): Boolean {
-        val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
-        if (info != null) {
-            // Already bound
-            return true
-        }
-        // Not yet bound — we need to request bind permission
-        // This shouldn't normally happen from ACTION_APPWIDGET_PICK,
-        // but handle it just in case
-        return true
-    }
+    fun launchConfigureIfNeeded(appWidgetId: Int, launcher: ActivityResultLauncher<Intent>): Boolean {
+        try {
+            val info = appWidgetManager.getAppWidgetInfo(appWidgetId) ?: return false
+            val configComp = info.configure ?: return false
 
-    /**
-     * Step 3: Check if the widget needs a configure activity and launch it.
-     * Returns true if configure was launched (caller should wait for result).
-     * Returns false if no configure needed (caller can create the view immediately).
-     */
-    fun launchConfigureIfNeeded(appWidgetId: Int, configureLauncher: ActivityResultLauncher<Intent>): Boolean {
-        val info = appWidgetManager.getAppWidgetInfo(appWidgetId) ?: return false
-        if (info.configure != null) {
+            // Verify the configure activity actually exists before launching
             val configIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
-                component = info.configure
+                component = configComp
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             }
-            try {
-                configureLauncher.launch(configIntent)
-                return true
-            } catch (e: Exception) {
-                Log.e(TAG, "Could not launch configure activity for ${info.configure}", e)
-                // Fall through — create without configuration
+            val resolveInfo = activity.packageManager.resolveActivity(configIntent, 0)
+            if (resolveInfo == null) {
+                Log.w(TAG, "Configure activity $configComp not resolvable, skipping")
+                return false
             }
+
+            launcher.launch(configIntent)
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "launchConfigure failed", e)
+            return false
         }
-        return false
     }
 
-    /**
-     * Create the actual widget view. Call this after binding + optional configuration.
-     * Sets proper size hints so the widget renders at the right dimensions.
-     */
+    /** Create the widget view with proper sizing. Returns null on failure. */
     fun createWidgetView(appWidgetId: Int): AppWidgetHostView? {
-        val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
-        if (info == null) {
-            Log.e(TAG, "No AppWidgetInfo for id=$appWidgetId — deleting")
-            appWidgetHost.deleteAppWidgetId(appWidgetId)
-            return null
+        return try {
+            val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+            if (info == null) {
+                Log.e(TAG, "No info for widget $appWidgetId")
+                return null
+            }
+
+            val hostView = appWidgetHost.createView(activity, appWidgetId, info)
+            hostView.setAppWidget(appWidgetId, info)
+
+            val density = activity.resources.displayMetrics.density
+
+            // info.minWidth/minHeight are already in dp
+            val wDp = if (info.minWidth > 0) info.minWidth else 280
+            val hDp = if (info.minHeight > 0) info.minHeight else 200
+
+            // Tell the widget its size
+            try {
+                hostView.updateAppWidgetSize(
+                    Bundle(), listOf(SizeF(wDp.toFloat(), hDp.toFloat()))
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "updateAppWidgetSize (new API) failed, trying legacy", e)
+                try {
+                    @Suppress("DEPRECATION")
+                    hostView.updateAppWidgetSize(null, wDp, hDp, wDp, hDp)
+                } catch (e2: Exception) {
+                    Log.w(TAG, "updateAppWidgetSize (legacy) also failed", e2)
+                }
+            }
+
+            // Convert dp to px for layout params
+            val wPx = (wDp * density).toInt()
+            val hPx = (hDp * density).toInt()
+            hostView.layoutParams = ViewGroup.LayoutParams(wPx, hPx)
+
+            Log.d(TAG, "Created widget: ${info.provider?.shortClassName} ${wDp}x${hDp}dp")
+            hostView
+        } catch (e: Exception) {
+            Log.e(TAG, "createWidgetView crashed for id=$appWidgetId", e)
+            null
         }
-
-        val hostView = appWidgetHost.createView(activity, appWidgetId, info)
-        hostView.setAppWidget(appWidgetId, info)
-
-        // Set the size so the widget knows how big to render
-        val density = activity.resources.displayMetrics.density
-        val minW = info.minWidth
-        val minH = info.minHeight
-        val targetW = if (minW > 0) minW else (280 * density).toInt()
-        val targetH = if (minH > 0) minH else (200 * density).toInt()
-
-        // Update the widget with its actual size in dp
-        val widthDp = (targetW / density).toInt()
-        val heightDp = (targetH / density).toInt()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            hostView.updateAppWidgetSize(
-                Bundle(),
-                listOf(android.util.SizeF(widthDp.toFloat(), heightDp.toFloat()))
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            hostView.updateAppWidgetSize(null, widthDp, heightDp, widthDp, heightDp)
-        }
-
-        // Set layout params with the actual size in pixels
-        hostView.layoutParams = ViewGroup.LayoutParams(targetW, targetH)
-
-        Log.d(TAG, "Created widget view: ${info.provider?.shortClassName} size=${targetW}x${targetH}")
-        return hostView
     }
 
-    /** Clean up a widget ID that wasn't used */
-    fun deleteWidgetId(appWidgetId: Int) {
-        appWidgetHost.deleteAppWidgetId(appWidgetId)
+    /** Safely delete a widget ID — won't crash on invalid IDs */
+    fun safeDeleteId(id: Int) {
+        if (id == -1) return
+        try { appWidgetHost.deleteAppWidgetId(id) }
+        catch (e: Exception) { Log.w(TAG, "deleteWidgetId($id) failed", e) }
     }
 }

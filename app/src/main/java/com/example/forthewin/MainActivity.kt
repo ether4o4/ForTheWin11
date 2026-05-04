@@ -87,37 +87,52 @@ class MainActivity : AppCompatActivity() {
 
     // ── Widget picker — 2-step flow: pick → configure (optional) → create ──
     private val widgetConfigureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-            ?: widgetHostManager.pendingWidgetId
-        if (result.resultCode == RESULT_OK && appWidgetId != -1) {
-            finalizeWidget(appWidgetId)
-        } else if (appWidgetId != -1) {
-            widgetHostManager.deleteWidgetId(appWidgetId)
+        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
+        val id = if (appWidgetId != -1) appWidgetId else widgetHostManager.pendingWidgetId
+        try {
+            if (result.resultCode == RESULT_OK && id != -1) {
+                finalizeWidget(id)
+            } else {
+                widgetHostManager.safeDeleteId(id)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "widgetConfigure callback", e)
+            widgetHostManager.safeDeleteId(id)
         }
     }
 
     private val widgetPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-            ?: widgetHostManager.pendingWidgetId
-        if (result.resultCode == RESULT_OK && appWidgetId != -1) {
-            // Check if this widget needs a configure step
-            val needsConfigure = widgetHostManager.launchConfigureIfNeeded(appWidgetId, widgetConfigureLauncher)
-            if (!needsConfigure) {
-                finalizeWidget(appWidgetId)
+        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
+        val id = if (appWidgetId != -1) appWidgetId else widgetHostManager.pendingWidgetId
+        try {
+            if (result.resultCode == RESULT_OK && id != -1) {
+                val needsConfigure = widgetHostManager.launchConfigureIfNeeded(id, widgetConfigureLauncher)
+                if (!needsConfigure) {
+                    finalizeWidget(id)
+                }
+            } else {
+                widgetHostManager.safeDeleteId(id)
             }
-            // else: widgetConfigureLauncher will handle it
-        } else if (appWidgetId != -1) {
-            widgetHostManager.deleteWidgetId(appWidgetId)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "widgetPicker callback", e)
+            widgetHostManager.safeDeleteId(id)
+            Snackbar.make(binding.root, "Widget picker error", Snackbar.LENGTH_SHORT).show()
         }
     }
 
     private fun finalizeWidget(appWidgetId: Int) {
-        val hostView = widgetHostManager.createWidgetView(appWidgetId)
-        if (hostView != null) {
-            widgetManager.addWidget(hostView)
-        } else {
-            widgetHostManager.deleteWidgetId(appWidgetId)
-            Snackbar.make(binding.root, "Widget failed to load", Snackbar.LENGTH_SHORT).show()
+        try {
+            val hostView = widgetHostManager.createWidgetView(appWidgetId)
+            if (hostView != null) {
+                widgetManager.addWidget(hostView)
+            } else {
+                widgetHostManager.safeDeleteId(appWidgetId)
+                Snackbar.make(binding.root, "Widget failed to load", Snackbar.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "finalizeWidget", e)
+            widgetHostManager.safeDeleteId(appWidgetId)
+            Snackbar.make(binding.root, "Widget error: ${e.message}", Snackbar.LENGTH_SHORT).show()
         }
     }
 
