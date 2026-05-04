@@ -912,8 +912,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun addAppToGrid(grid: GridLayout, app: AppModel) {
         val v = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
-        val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-        v.layoutParams = GridLayout.LayoutParams(spec, spec).apply { width = 0 }
+        val rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
+        val colSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+        v.layoutParams = GridLayout.LayoutParams(rowSpec, colSpec).apply { width = 0 }
         v.findViewById<TextView>(R.id.icon_label).text = app.label
         v.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
         v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
