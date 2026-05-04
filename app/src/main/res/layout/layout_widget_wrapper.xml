@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Draggable widget wrapper with dismiss button -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp">
+
+    <!-- Widget content -->
+    <FrameLayout
+        android:id="@+id/widget_content_slot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <!-- Drag handle (invisible strip at top of widget) -->
+    <View
+        android:id="@+id/widget_drag_handle"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:background="@android:color/transparent" />
+
+    <!-- Dismiss button (X top-right) -->
+    <TextView
+        android:id="@+id/btn_widget_dismiss"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:background="@drawable/glass_panel_obsidian"
+        android:gravity="center"
+        android:text="✕"
+        android:textColor="@color/white"
+        android:textSize="11sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="8dp" />
+
+</FrameLayout>

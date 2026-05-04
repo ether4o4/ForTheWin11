@@ -1,50 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="100dp"
-    android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
+<!-- Desktop icon: draggable, long-press to delete, no tinting -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="72dp"
+    android:layout_height="88dp"
     android:clickable="true"
-    android:focusable="true"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:focusable="true">
 
-    <!-- Neumorphic Glass Tile -->
-    <FrameLayout
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:background="@drawable/glass_panel_obsidian"
-        android:padding="12dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="6dp">
 
         <ImageView
             android:id="@+id/icon_image"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/ic_launcher_foreground"
-            android:scaleType="fitCenter" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_launcher_foreground" />
 
-        <!-- Reflection Layer -->
-        <View
+        <TextView
+            android:id="@+id/icon_label"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/metallic_surface"
-            android:alpha="0.1" />
-    </FrameLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="2"
+            android:text="Label"
+            android:textColor="#FFFFFFFF"
+            android:textSize="10sp"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+    </LinearLayout>
+
+    <!-- Delete badge (shown on long press / edit mode) -->
+    <View
+        android:id="@+id/delete_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#44FF0000"
+        android:visibility="gone" />
 
     <TextView
-        android:id="@+id/icon_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:ellipsize="end"
+        android:id="@+id/btn_delete_icon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="2dp"
+        android:background="@drawable/win11_active_indicator"
         android:gravity="center"
-        android:maxLines="2"
-        android:text="Label"
+        android:text="✕"
         android:textColor="@color/white"
-        android:textSize="11sp"
-        android:shadowColor="#CC000000"
-        android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="4" />
+        android:textSize="9sp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true" />
 
-</LinearLayout>
+</FrameLayout>

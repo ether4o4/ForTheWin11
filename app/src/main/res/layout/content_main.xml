@@ -8,26 +8,27 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/app_bar_main">
 
-    <!-- Desktop Icons Area -->
-    <GridLayout
+    <!-- Free-position desktop icon layer -->
+    <FrameLayout
         android:id="@+id/desktop_icons_grid"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="16dp"
-        android:columnCount="1"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toTopOf="@+id/custom_taskbar"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-    </GridLayout>
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Sidebar Widgets Area -->
+    <!-- Sidebar Widgets (right side, scrollable) -->
     <LinearLayout
         android:id="@+id/sidebar_widgets"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_margin="8dp"
         android:orientation="vertical"
-        android:visibility="visible"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toTopOf="@+id/custom_taskbar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -37,22 +38,7 @@
 
     </LinearLayout>
 
-    <!-- Main Content Area -->
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment_content_main"
-        android:name="androidx.navigation.fragment.NavHostFragment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="16dp"
-        android:alpha="0.9"
-        app:defaultNavHost="true"
-        app:layout_constraintBottom_toTopOf="@+id/custom_taskbar"
-        app:layout_constraintEnd_toStartOf="@+id/sidebar_widgets"
-        app:layout_constraintStart_toEndOf="@+id/desktop_icons_grid"
-        app:layout_constraintTop_toTopOf="parent"
-        app:navGraph="@navigation/mobile_navigation" />
-
-    <!-- Floating Window Layer -->
+    <!-- Floating Windows layer -->
     <FrameLayout
         android:id="@+id/floating_window_container"
         android:layout_width="match_parent"
@@ -60,13 +46,15 @@
         android:clipChildren="false"
         android:clipToPadding="false" />
 
-    <!-- Custom Taskbar -->
+    <!-- Taskbar -->
     <include
         android:id="@+id/custom_taskbar"
         layout="@layout/layout_custom_taskbar"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_margin="12dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -89,10 +77,22 @@
         layout="@layout/layout_control_center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/custom_taskbar"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Hidden nav fragment (still needed for Settings) -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment_content_main"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:visibility="gone"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/mobile_navigation"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

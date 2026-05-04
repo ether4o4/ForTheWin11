@@ -1,220 +1,473 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Win11 Action Center — light theme matching reference screenshots -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="400dp"
+    android:layout_width="340dp"
     android:layout_height="wrap_content"
-    android:background="@drawable/glass_panel_obsidian"
-    android:orientation="vertical"
-    android:padding="20dp"
-    android:elevation="30dp">
+    android:background="@drawable/control_center_bg"
+    android:elevation="24dp"
+    android:scrollbars="none">
 
-    <!-- Quick Toggles Grid -->
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="4"
-        android:alignmentMode="alignMargins"
-        android:columnOrderPreserved="false">
-
-        <!-- Wi-Fi -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_columnWeight="1"
-            android:layout_margin="4dp"
-            android:background="@drawable/sidebar_item_active"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_upload"
-                android:rotation="180"
-                app:tint="@color/white" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Wi-Fi"
-                android:textColor="@color/white"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <!-- Bluetooth -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_columnWeight="1"
-            android:layout_margin="4dp"
-            android:background="@drawable/sidebar_item_active"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_camera_black_24dp"
-                app:tint="@color/white" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Bluetooth"
-                android:textColor="@color/white"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <!-- Airplane Mode -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_columnWeight="1"
-            android:layout_margin="4dp"
-            android:background="@drawable/search_bar_glass"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_send"
-                app:tint="@color/text_dim" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Airplane"
-                android:textColor="@color/text_dim"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <!-- Night Light -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_columnWeight="1"
-            android:layout_margin="4dp"
-            android:background="@drawable/search_bar_glass"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_lock_idle_alarm"
-                app:tint="@color/text_dim" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Night light"
-                android:textColor="@color/text_dim"
-                android:textSize="10sp" />
-        </LinearLayout>
-    </GridLayout>
-
-    <!-- Sliders Area -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- Brightness Slider -->
+        <!-- ── NOTIFICATIONS ──────────────────────────────────────────── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="8dp">
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Notifications"
+                android:textColor="#FF000000"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/btn_clear_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear all"
+                android:textColor="#FF0078D4"
+                android:textSize="13sp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/notification_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <!-- Teams notification -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/notification_card"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:layout_marginBottom="6dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <View
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/win11_active_indicator" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Microsoft Teams"
+                        android:textColor="#FF000000"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2m ago"
+                        android:textColor="#99000000"
+                        android:textSize="11sp" />
+                    <TextView
+                        android:id="@+id/notif_dismiss_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="✕"
+                        android:textColor="#66000000"
+                        android:textSize="13sp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Design Sync\nDaily standup at 5:00 PM"
+                    android:textColor="#CC000000"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Outlook notification -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/notification_card"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:layout_marginBottom="6dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <View
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/win11_active_indicator" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Outlook"
+                        android:textColor="#FF000000"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="15m ago"
+                        android:textColor="#99000000"
+                        android:textSize="11sp" />
+                    <TextView
+                        android:id="@+id/notif_dismiss_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="✕"
+                        android:textColor="#66000000"
+                        android:textSize="13sp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Sarah Johnson — Re: Project Update"
+                    android:textColor="#CC000000"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#18000000"
+            android:layout_marginBottom="14dp" />
+
+        <!-- ── DATE HEADER ────────────────────────────────────────────── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:id="@+id/cc_date_header"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Monday, May 20"
+                android:textColor="#FF000000"
+                android:textSize="14sp"
+                android:textStyle="bold" />
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:src="@android:drawable/arrow_down_float"
+                android:contentDescription="Collapse" />
+        </LinearLayout>
+
+        <!-- ── QUICK TOGGLES (3 col) ──────────────────────────────────── -->
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="3"
+            android:layout_marginBottom="12dp">
+
+            <!-- Wi-Fi ON -->
+            <LinearLayout
+                android:id="@+id/toggle_wifi"
+                android:layout_width="0dp"
+                android:layout_height="68dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="3dp"
+                android:background="@drawable/quick_toggle_on"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@android:drawable/ic_menu_upload"
+                    android:rotation="180"
+                    app:tint="#FF0078D4"
+                    android:contentDescription="Wi-Fi" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Contoso Wi-Fi"
+                    android:textColor="#FF0078D4"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Connected"
+                    android:textColor="#660078D4"
+                    android:textSize="8sp" />
+            </LinearLayout>
+
+            <!-- Bluetooth OFF -->
+            <LinearLayout
+                android:id="@+id/toggle_bluetooth"
+                android:layout_width="0dp"
+                android:layout_height="68dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="3dp"
+                android:background="@drawable/quick_toggle_off"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_win11_edge"
+                    app:tint="#99000000"
+                    android:contentDescription="Bluetooth" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Not connected"
+                    android:textColor="#99000000"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <!-- Airplane -->
+            <LinearLayout
+                android:id="@+id/toggle_airplane"
+                android:layout_width="0dp"
+                android:layout_height="68dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="3dp"
+                android:background="@drawable/quick_toggle_off"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@android:drawable/ic_menu_send"
+                    app:tint="#99000000"
+                    android:contentDescription="Airplane mode" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Airplane mode"
+                    android:textColor="#99000000"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <!-- Battery saver -->
+            <LinearLayout
+                android:id="@+id/toggle_battery_saver"
+                android:layout_width="0dp"
+                android:layout_height="68dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="3dp"
+                android:background="@drawable/quick_toggle_off"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@android:drawable/ic_lock_idle_low_battery"
+                    app:tint="#99000000"
+                    android:contentDescription="Battery saver" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Battery saver"
+                    android:textColor="#99000000"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <!-- Focus assist -->
+            <LinearLayout
+                android:id="@+id/toggle_focus"
+                android:layout_width="0dp"
+                android:layout_height="68dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="3dp"
+                android:background="@drawable/quick_toggle_off"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@android:drawable/ic_lock_idle_alarm"
+                    app:tint="#99000000"
+                    android:contentDescription="Focus assist" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Focus assist"
+                    android:textColor="#99000000"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <!-- Accessibility -->
+            <LinearLayout
+                android:id="@+id/toggle_accessibility"
+                android:layout_width="0dp"
+                android:layout_height="68dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="3dp"
+                android:background="@drawable/quick_toggle_off"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_win11_settings"
+                    app:tint="#99000000"
+                    android:contentDescription="Accessibility" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Accessibility"
+                    android:textColor="#99000000"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+        </GridLayout>
+
+        <!-- ── BRIGHTNESS SLIDER ──────────────────────────────────────── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:src="@android:drawable/ic_menu_compass"
-                app:tint="@color/text_dim" />
+                app:tint="#99000000"
+                android:contentDescription="Brightness" />
             <SeekBar
                 android:id="@+id/brightness_slider"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
                 android:max="100"
                 android:progress="70"
-                android:progressTint="@color/vista_red_accent"
-                android:thumbTint="@color/white" />
+                android:progressTint="#FF0078D4"
+                android:thumbTint="#FF0078D4" />
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_win11_settings"
+                app:tint="#99000000"
+                android:contentDescription="Display settings" />
         </LinearLayout>
 
-        <!-- Volume Slider -->
+        <!-- ── VOLUME SLIDER ──────────────────────────────────────────── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="8dp">
+            android:layout_marginBottom="14dp">
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_gallery_black_24dp"
-                app:tint="@color/text_dim" />
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@android:drawable/ic_lock_silent_mode_off"
+                app:tint="#99000000"
+                android:contentDescription="Volume" />
             <SeekBar
                 android:id="@+id/volume_slider"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
                 android:max="100"
                 android:progress="45"
-                android:progressTint="@color/vista_red_accent"
-                android:thumbTint="@color/white" />
+                android:progressTint="#FF0078D4"
+                android:thumbTint="#FF0078D4" />
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_win11_settings"
+                app:tint="#99000000"
+                android:contentDescription="Sound settings" />
         </LinearLayout>
-    </LinearLayout>
 
-    <!-- Notifications Section -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="12dp">
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- ── BATTERY ROW ────────────────────────────────────────────── -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Notifications"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-        <TextView
-            android:id="@+id/btn_clear_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:text="Clear all"
-            android:textColor="@color/text_dim"
-            android:textSize="12sp" />
-    </RelativeLayout>
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_lock_idle_low_battery"
+                app:tint="#66000000"
+                android:contentDescription="Battery" />
+            <TextView
+                android:id="@+id/battery_percent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="100%"
+                android:textColor="#CC000000"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_win11_settings"
+                app:tint="#66000000"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Settings" />
+        </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/notification_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-        <!-- Notification Items -->
-        <include layout="@layout/item_notification" />
-        <include layout="@layout/item_notification" />
     </LinearLayout>
-
-    <!-- Footer -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center_vertical">
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@android:drawable/ic_menu_preferences"
-            app:tint="@color/text_dim" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="More settings"
-            android:textColor="@color/text_dim"
-            android:textSize="12sp" />
-    </LinearLayout>
-
-</LinearLayout>
+</ScrollView>

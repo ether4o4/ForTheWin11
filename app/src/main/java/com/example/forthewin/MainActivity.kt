@@ -59,6 +59,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var taskbarManager: TaskbarManager
     private lateinit var widgetHostManager: WidgetHostManager
     private lateinit var iconPackManager: IconPackManager
+    private lateinit var desktopManager: com.example.forthewin.ui.controllers.DesktopManager
+    private lateinit var widgetManager: com.example.forthewin.ui.controllers.WidgetManager
 
     private fun AppModel.bestIcon() = resolvedIcon(iconPackManager)
 
@@ -118,6 +120,8 @@ class MainActivity : AppCompatActivity() {
                     toggleStartMenu(false)
                 } else if (controlCenter?.visibility == View.VISIBLE) {
                     toggleControlCenter(false)
+                } else if (desktopManager.isEditMode()) {
+                    desktopManager.setEditMode(false)
                 } else {
                     val windowContainer = binding.appBarMain.contentMain.floatingWindowContainer
                     if (windowContainer != null && windowContainer.childCount > 0) {
@@ -139,6 +143,17 @@ class MainActivity : AppCompatActivity() {
             { window -> taskbarManager.removeWindowIcon(window) }
         )
         widgetHostManager = WidgetHostManager(this)
+
+        desktopManager = com.example.forthewin.ui.controllers.DesktopManager(
+            this,
+            binding.appBarMain.contentMain.desktopIconsGrid!!,
+            iconPackManager
+        ) { packageName -> launchApp(packageName) }
+
+        widgetManager = com.example.forthewin.ui.controllers.WidgetManager(
+            this,
+            binding.appBarMain.contentMain.sidebarWidgets!!
+        )
     }
 
     private fun checkPermissions() {
@@ -149,22 +164,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupTaskbar() {
-        val taskbarBinding = binding.appBarMain.contentMain.customTaskbar ?: return
+        // Taskbar now uses direct findViewById — new layout has no view binding IDs
+        // for some elements, so we find by ID on the inflated view
+        val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root ?: return
         val startMenuBinding = binding.appBarMain.contentMain.startMenuPanel ?: return
         val controlCenterBinding = binding.appBarMain.contentMain.controlCenterPanel ?: return
-        
+
         val startMenu = startMenuBinding.root
         val controlCenter = controlCenterBinding.root
 
-        taskbarBinding.btnStartOrb.let { orb ->
-            val pulse = android.animation.ObjectAnimator.ofFloat(orb, "alpha", 0.6f, 1f)
-            pulse.duration = 2000
-            pulse.repeatMode = android.animation.ObjectAnimator.REVERSE
-            pulse.repeatCount = android.animation.ObjectAnimator.INFINITE
-            pulse.start()
-        }
-
-        taskbarBinding.btnStartOrb.setOnClickListener {
+        taskbarRoot.findViewById<View>(R.id.btn_start_orb)?.setOnClickListener {
             if (startMenu.visibility == View.GONE) {
                 toggleControlCenter(false)
                 toggleStartMenu(true)
@@ -174,29 +183,50 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        taskbarBinding.btnTaskbarSearch.setOnClickListener {
-            Snackbar.make(binding.root, "Searching...", Snackbar.LENGTH_SHORT).show()
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_search)?.setOnClickListener {
+            Snackbar.make(binding.root, "Search", Snackbar.LENGTH_SHORT).show()
         }
 
-        taskbarBinding.btnTaskbarWidgets.setOnClickListener {
-            widgetHostManager.pickWidget(widgetPickerLauncher)
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_taskview)?.setOnClickListener {
+            Snackbar.make(binding.root, "Task View", Snackbar.LENGTH_SHORT).show()
         }
 
-        taskbarBinding.btnTaskbarExplorer.setOnClickListener { openFileExplorer() }
-        taskbarBinding.btnTaskbarBrowser.setOnClickListener { openBrowser() }
-        taskbarBinding.btnTaskbarNotepad.setOnClickListener { openNotepad() }
-        taskbarBinding.btnTaskbarSettings.setOnClickListener {
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_explorer)?.setOnClickListener {
+            openFileExplorer()
+        }
+
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_browser)?.setOnClickListener {
+            openBrowser()
+        }
+
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_settings)?.setOnClickListener {
             findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
         }
-        taskbarBinding.btnTaskbarTerminal.setOnClickListener { openTerminal() }
 
-        taskbarBinding.taskbarSystemTray.setOnClickListener {
+        taskbarRoot.findViewById<View>(R.id.taskbar_system_tray)?.setOnClickListener {
             if (controlCenter.visibility == View.GONE) {
                 toggleStartMenu(false)
                 toggleControlCenter(true)
             } else {
                 toggleControlCenter(false)
             }
+        }
+
+        taskbarRoot.findViewById<View>(R.id.btn_notifications)?.setOnClickListener {
+            if (controlCenter.visibility == View.GONE) {
+                toggleStartMenu(false)
+                toggleControlCenter(true)
+            } else {
+                toggleControlCenter(false)
+            }
+        }
+
+        // Wire control center dismiss buttons
+        controlCenterBinding.root.findViewById<View>(R.id.notif_dismiss_1)?.setOnClickListener { v ->
+            v.parent.let { (it as? View)?.animate()?.alpha(0f)?.translationX(60f)?.setDuration(200)?.withEndAction { (it.parent as? android.view.ViewGroup)?.removeView(it) }?.start() }
+        }
+        controlCenterBinding.root.findViewById<View>(R.id.notif_dismiss_2)?.setOnClickListener { v ->
+            v.parent.let { (it as? View)?.animate()?.alpha(0f)?.translationX(60f)?.setDuration(200)?.withEndAction { (it.parent as? android.view.ViewGroup)?.removeView(it) }?.start() }
         }
     }
 
@@ -302,27 +332,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun populateDesktopIcons() {
-        val grid = binding.appBarMain.contentMain.desktopIconsGrid ?: return
-        grid.removeAllViews()
-        val icons = listOf(
-            Triple("Recycle Bin", android.R.drawable.ic_menu_delete, "bin"),
-            Triple("This PC", R.drawable.ic_gallery_black_24dp, "pc"),
-            Triple("Browser", R.drawable.ic_camera_black_24dp, "web"),
-            Triple("Network", R.drawable.ic_camera_black_24dp, "net")
-        )
-        for (icon in icons) {
-            val view = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
-            view.findViewById<TextView>(R.id.icon_label).text = icon.first
-            val iconImg = view.findViewById<ImageView>(R.id.icon_image)
-            iconImg.setImageResource(icon.second)
-            iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
-            view.setOnClickListener {
-                if (icon.third == "pc") openFileExplorer()
-                else if (icon.third == "web") openBrowser()
-                else Snackbar.make(binding.root, "Opening ${icon.first}...", Snackbar.LENGTH_SHORT).show()
-            }
-            grid.addView(view)
-        }
+        // Use first 6 installed apps as desktop icons — draggable, long-press to delete
+        val desktopApps = allInstalledApps.take(6)
+        desktopManager.setIcons(desktopApps)
     }
 
     private fun openFileExplorer() {
@@ -455,7 +467,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Called from SettingsFragment after icon pack change — refreshes all icon surfaces */
     fun refreshIcons() {
-        populateDesktopIcons()
+        desktopManager.setIcons(allInstalledApps.take(6))
         val startMenuPanel = binding.appBarMain.contentMain.startMenuPanel
         if (startMenuPanel?.root?.visibility == View.VISIBLE) {
             populatePinnedApps(startMenuPanel)
