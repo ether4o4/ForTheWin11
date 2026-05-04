@@ -3,10 +3,15 @@
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
 
-    <!-- Win11 Accent -->
+    <!-- Win11 Accent (Blue default) -->
     <color name="win11_accent">#FF0078D4</color>
     <color name="win11_accent_dim">#330078D4</color>
     <color name="win11_accent_glow">#1A0078D4</color>
+
+    <!-- Win11 Red accent -->
+    <color name="win11_red">#FFE74856</color>
+    <color name="win11_red_dim">#33E74856</color>
+    <color name="win11_red_glow">#1AE74856</color>
 
     <!-- Glass / Mica surface system -->
     <color name="surface_base">#FF0A0A0C</color>
