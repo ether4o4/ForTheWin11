@@ -7,21 +7,16 @@
             <corners android:radius="14dp" />
         </shape>
     </item>
-    <!-- Frosted icon bg -->
+    <!-- Frosted icon bg — gradient gives top-highlight effect -->
     <item>
         <shape>
-            <solid android:color="#CCF8FEFF" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#EEFCFEFF"
+                android:endColor="#CCF0F8FF" />
             <corners android:radius="12dp" />
-            <stroke android:width="1dp" android:color="#18FFFFFF" />
-        </shape>
-    </item>
-    <!-- Top sheen -->
-    <item android:bottom="55%">
-        <shape>
-            <gradient android:type="linear" android:angle="270"
-                android:startColor="#22FFFFFF" android:endColor="#00FFFFFF" />
-            <corners android:topLeftRadius="12dp" android:topRightRadius="12dp"
-                android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
+            <stroke android:width="1dp" android:color="#1AFFFFFF" />
         </shape>
     </item>
 </layer-list>

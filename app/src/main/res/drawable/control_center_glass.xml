@@ -7,21 +7,16 @@
             <corners android:radius="20dp" />
         </shape>
     </item>
-    <!-- Frosted white glass -->
+    <!-- Frosted white glass — gradient top-to-bottom for sheen -->
     <item>
         <shape>
-            <solid android:color="#F4FAFEFF" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#FFFCFEFF"
+                android:endColor="#F4F5F8FF" />
             <corners android:radius="20dp" />
             <stroke android:width="1dp" android:color="#14000000" />
-        </shape>
-    </item>
-    <!-- Top sheen -->
-    <item android:bottom="70%">
-        <shape>
-            <gradient android:type="linear" android:angle="270"
-                android:startColor="#18FFFFFF" android:endColor="#00FFFFFF" />
-            <corners android:topLeftRadius="20dp" android:topRightRadius="20dp"
-                android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
         </shape>
     </item>
 </layer-list>

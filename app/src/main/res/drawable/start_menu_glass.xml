@@ -8,26 +8,17 @@
                 android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
         </shape>
     </item>
-    <!-- Main glass body: dark mica -->
+    <!-- Main glass body: dark mica gradient — top lighter for sheen effect -->
     <item>
         <shape>
             <gradient
                 android:type="linear"
                 android:angle="270"
-                android:startColor="#EE1E1E22"
+                android:startColor="#F0222226"
                 android:endColor="#F0141418" />
             <corners android:topLeftRadius="20dp" android:topRightRadius="20dp"
                 android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
             <stroke android:width="1dp" android:color="#28FFFFFF" />
-        </shape>
-    </item>
-    <!-- Top highlight strip -->
-    <item android:bottom="88%">
-        <shape>
-            <gradient android:type="linear" android:angle="270"
-                android:startColor="#1AFFFFFF" android:endColor="#00FFFFFF" />
-            <corners android:topLeftRadius="20dp" android:topRightRadius="20dp"
-                android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
         </shape>
     </item>
 </layer-list>

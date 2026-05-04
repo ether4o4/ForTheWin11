@@ -7,24 +7,16 @@
             <corners android:radius="18dp" />
         </shape>
     </item>
-    <!-- Main glass surface -->
+    <!-- Main glass surface with built-in top sheen via gradient -->
     <item>
-        <shape>
-            <solid android:color="#E6141418" />
-            <corners android:radius="18dp" />
-            <stroke android:width="1dp" android:color="#22FFFFFF" />
-        </shape>
-    </item>
-    <!-- Top highlight sheen -->
-    <item android:bottom="50%">
         <shape>
             <gradient
                 android:type="linear"
                 android:angle="270"
-                android:startColor="#18FFFFFF"
-                android:endColor="#00FFFFFF" />
-            <corners android:topLeftRadius="18dp" android:topRightRadius="18dp"
-                android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
+                android:startColor="#F0181820"
+                android:endColor="#E6141418" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="#22FFFFFF" />
         </shape>
     </item>
 </layer-list>
