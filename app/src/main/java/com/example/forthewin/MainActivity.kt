@@ -834,10 +834,9 @@ class MainActivity : AppCompatActivity() {
 
     // ── Start Menu internals ──────────────────────────────────────────
     private fun setupStartMenuActions(start: LayoutStartMenuBinding) {
-        populateSidebar(start)
+        populateAllAppsList(start)
         populateRecommended(start)
         populatePinnedApps(start)
-        populateQuickAccess(start)
 
         start.startSearchInput.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
@@ -848,7 +847,6 @@ class MainActivity : AppCompatActivity() {
         })
 
         start.btnPower.setOnClickListener { showPowerMenu(it) }
-        start.btnAllAppsDropdown.setOnClickListener { showAllApps(true) }
         start.btnSettingsQuick.setOnClickListener {
             toggleStartMenu(false)
             findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
@@ -864,13 +862,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun populateAllAppsList(start: LayoutStartMenuBinding) {
+        val container = start.allAppsList
+        container.removeAllViews()
+        allInstalledApps.sortedBy { it.label.lowercase() }.forEach { app ->
+            val v = layoutInflater.inflate(R.layout.item_app_list_row, container, false)
+            v.findViewById<ImageView>(R.id.app_row_icon).setImageDrawable(app.bestIcon())
+            v.findViewById<TextView>(R.id.app_row_label).text = app.label
+            v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
+            v.setOnLongClickListener { showAppContextMenu(v, app); true }
+            container.addView(v)
+        }
+    }
+
     private fun filterStartMenuContent(query: String) {
-        val sm   = binding.appBarMain.contentMain.startMenuPanel ?: return
-        val grid = sm.pinnedAppsGrid
-        if (query.isEmpty()) { populatePinnedApps(sm); return }
-        grid.removeAllViews(); grid.columnCount = 4
-        allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }.take(12).forEach { app ->
-            addAppToGrid(grid, app)
+        val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
+        val container = sm.allAppsList
+        container.removeAllViews()
+        val filtered = if (query.isEmpty()) allInstalledApps.sortedBy { it.label.lowercase() }
+            else allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }.sortedBy { it.label.lowercase() }
+        filtered.forEach { app ->
+            val v = layoutInflater.inflate(R.layout.item_app_list_row, container, false)
+            v.findViewById<ImageView>(R.id.app_row_icon).setImageDrawable(app.bestIcon())
+            v.findViewById<TextView>(R.id.app_row_label).text = app.label
+            v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
+            v.setOnLongClickListener { showAppContextMenu(v, app); true }
+            container.addView(v)
         }
     }
 
@@ -883,31 +900,14 @@ class MainActivity : AppCompatActivity() {
         popup.show()
     }
 
-    private fun showAllApps(show: Boolean) {
-        val start = binding.appBarMain.contentMain.startMenuPanel ?: return
-        start.pinnedAppsGrid.removeAllViews()
-        start.pinnedAppsGrid.columnCount = 4
-        if (show) {
-            allInstalledApps.forEach { app -> addAppToGrid(start.pinnedAppsGrid, app) }
-            start.btnAllAppsDropdown.text = "Pinned  ‹"
-            start.btnAllAppsDropdown.setOnClickListener { showAllApps(false) }
-        } else {
-            populatePinnedApps(start)
-            start.btnAllAppsDropdown.text = "All apps  ›"
-            start.btnAllAppsDropdown.setOnClickListener { showAllApps(true) }
-        }
-    }
-
     private fun populatePinnedApps(start: LayoutStartMenuBinding) {
         val grid = start.pinnedAppsGrid
-        grid.removeAllViews(); grid.columnCount = 4
+        grid.removeAllViews(); grid.columnCount = 3
         val priority = listOf("File Explorer","Microsoft Edge","Notepad","Photos","Settings","Calculator","Camera","Maps","Clock","YouTube","Gmail","Chrome")
         allInstalledApps.filter { it.label in priority }
             .plus(allInstalledApps.filter { it.label !in priority })
-            .distinctBy { it.packageName }.take(12)
+            .distinctBy { it.packageName }.take(9)
             .forEach { app -> addAppToGrid(grid, app) }
-        start.btnAllAppsDropdown.text = "All apps  ›"
-        start.btnAllAppsDropdown.setOnClickListener { showAllApps(true) }
     }
 
     private fun addAppToGrid(grid: GridLayout, app: AppModel) {
@@ -920,32 +920,6 @@ class MainActivity : AppCompatActivity() {
         v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
         v.setOnLongClickListener { showAppContextMenu(v, app); true }
         grid.addView(v)
-    }
-
-    private fun populateSidebar(start: LayoutStartMenuBinding) {
-        val container = start.sidebarContainer
-        container.removeAllViews()
-        listOf(
-            Pair("All", android.R.drawable.ic_dialog_dialer),
-            Pair("Pinned", android.R.drawable.ic_menu_myplaces),
-            Pair("Productivity", android.R.drawable.ic_menu_agenda),
-            Pair("Development", android.R.drawable.ic_menu_edit),
-            Pair("Media", android.R.drawable.ic_menu_gallery),
-            Pair("System", android.R.drawable.ic_menu_preferences)
-        ).forEach { (cat, icon) ->
-            val v = layoutInflater.inflate(R.layout.item_sidebar_category, container, false)
-            v.findViewById<TextView>(R.id.sidebar_item_label).text = cat
-            v.findViewById<ImageView>(R.id.sidebar_item_icon).setImageResource(icon)
-            if (cat == "All") {
-                v.background = ResourcesCompat.getDrawable(resources, R.drawable.sidebar_item_active, null)
-                v.findViewById<TextView>(R.id.sidebar_item_label).setTextColor(Color.WHITE)
-            }
-            v.setOnClickListener {
-                Snackbar.make(binding.root, "Category: $cat", Snackbar.LENGTH_SHORT).show()
-            }
-            container.addView(v)
-        }
-        container.addView(layoutInflater.inflate(R.layout.layout_sidebar_footer, container, false))
     }
 
     private fun populateRecommended(start: LayoutStartMenuBinding) {
@@ -969,23 +943,6 @@ class MainActivity : AppCompatActivity() {
                 v.setOnClickListener { toggleStartMenu(false) }
                 container.addView(v)
             }
-        }
-    }
-
-    private fun populateQuickAccess(start: LayoutStartMenuBinding) {
-        val container = start.quickAccessContainer
-        container.removeAllViews()
-        listOf("Downloads", "Documents", "Pictures", "Videos").forEach { folder ->
-            val v = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
-            v.layoutParams = v.layoutParams.also { it.width = (132 * resources.displayMetrics.density).toInt() }
-            v.findViewById<TextView>(R.id.file_name).text = folder
-            v.findViewById<TextView>(R.id.file_subtitle).visibility = View.GONE
-            v.findViewById<ImageView>(R.id.file_icon).apply {
-                setImageResource(R.drawable.ic_win11_folder)
-                setColorFilter(ThemeManager.accent(this@MainActivity), PorterDuff.Mode.SRC_IN)
-            }
-            v.setOnClickListener { Snackbar.make(binding.root, "Opening $folder…", Snackbar.LENGTH_SHORT).show() }
-            container.addView(v)
         }
     }
 
