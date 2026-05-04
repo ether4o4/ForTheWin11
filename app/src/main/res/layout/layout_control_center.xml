@@ -1,50 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Win11 Action Center — supports light/dark and blue/red accent via code theming -->
+<!-- Win11 Control Center — frosted glass, real notifications, sliders, toggles -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/control_center_root"
     android:layout_width="320dp"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Drag-resize handle — left edge strip -->
+    <!-- Resize handle strip — left edge, drag to widen/narrow panel -->
     <View
         android:id="@+id/cc_resize_handle"
-        android:layout_width="12dp"
+        android:layout_width="10dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="#22000000" />
+        android:background="#00000000" />
 
+    <!-- Glass panel body -->
     <ScrollView
         android:id="@+id/cc_scroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:background="@drawable/control_center_bg"
-        android:elevation="24dp"
-        android:scrollbars="none">
+        android:layout_marginStart="10dp"
+        android:background="@drawable/control_center_glass"
+        android:elevation="28dp"
+        android:scrollbars="none"
+        android:fillViewport="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="16dp">
 
-            <!-- ── QUICK TOGGLES (2x2 top row) ──────────────────────── -->
+            <!-- ── QUICK TOGGLES ────────────────────────────────── -->
             <GridLayout
                 android:id="@+id/cc_toggles_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:columnCount="4"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="16dp">
 
                 <!-- Wi-Fi -->
                 <LinearLayout
                     android:id="@+id/toggle_wifi"
                     android:layout_width="0dp"
-                    android:layout_height="60dp"
+                    android:layout_height="66dp"
                     android:layout_columnWeight="1"
                     android:layout_margin="3dp"
-                    android:background="@drawable/quick_toggle_on"
+                    android:background="@drawable/toggle_chip_active"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
@@ -52,8 +59,8 @@
                     android:padding="6dp">
                     <ImageView
                         android:id="@+id/ic_wifi"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:src="@android:drawable/ic_menu_upload"
                         android:rotation="180"
                         app:tint="#FF0078D4"
@@ -62,10 +69,11 @@
                         android:id="@+id/lbl_wifi"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="3dp"
                         android:text="Wi-Fi"
                         android:textColor="#FF0078D4"
-                        android:textSize="8sp"
+                        android:textSize="9sp"
+                        android:fontFamily="sans-serif-medium"
                         android:maxLines="1" />
                 </LinearLayout>
 
@@ -73,10 +81,10 @@
                 <LinearLayout
                     android:id="@+id/toggle_bluetooth"
                     android:layout_width="0dp"
-                    android:layout_height="60dp"
+                    android:layout_height="66dp"
                     android:layout_columnWeight="1"
                     android:layout_margin="3dp"
-                    android:background="@drawable/quick_toggle_off"
+                    android:background="@drawable/toggle_chip_off"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
@@ -84,19 +92,19 @@
                     android:padding="6dp">
                     <ImageView
                         android:id="@+id/ic_bluetooth"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:src="@drawable/ic_win11_edge"
-                        app:tint="#99000000"
+                        app:tint="#88000000"
                         android:contentDescription="Bluetooth" />
                     <TextView
                         android:id="@+id/lbl_bluetooth"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="3dp"
                         android:text="Bluetooth"
-                        android:textColor="#99000000"
-                        android:textSize="8sp"
+                        android:textColor="#88000000"
+                        android:textSize="9sp"
                         android:maxLines="1" />
                 </LinearLayout>
 
@@ -104,138 +112,66 @@
                 <LinearLayout
                     android:id="@+id/toggle_airplane"
                     android:layout_width="0dp"
-                    android:layout_height="60dp"
+                    android:layout_height="66dp"
                     android:layout_columnWeight="1"
                     android:layout_margin="3dp"
-                    android:background="@drawable/quick_toggle_off"
+                    android:background="@drawable/toggle_chip_off"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="6dp">
-                    <ImageView
-                        android:id="@+id/ic_airplane"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@android:drawable/ic_menu_send"
-                        app:tint="#99000000"
-                        android:contentDescription="Airplane mode" />
+                    <TextView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:gravity="center"
+                        android:text="✈"
+                        android:textColor="#88000000"
+                        android:textSize="16sp" />
                     <TextView
                         android:id="@+id/lbl_airplane"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="3dp"
                         android:text="Airplane"
-                        android:textColor="#99000000"
-                        android:textSize="8sp"
+                        android:textColor="#88000000"
+                        android:textSize="9sp"
                         android:maxLines="1" />
                 </LinearLayout>
 
-                <!-- Night light -->
+                <!-- Night Light -->
                 <LinearLayout
                     android:id="@+id/toggle_night"
                     android:layout_width="0dp"
-                    android:layout_height="60dp"
+                    android:layout_height="66dp"
                     android:layout_columnWeight="1"
                     android:layout_margin="3dp"
-                    android:background="@drawable/quick_toggle_off"
+                    android:background="@drawable/toggle_chip_off"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="6dp">
-                    <ImageView
-                        android:id="@+id/ic_night"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_win11_settings"
-                        app:tint="#99000000"
-                        android:contentDescription="Night light" />
+                    <TextView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:gravity="center"
+                        android:text="🌙"
+                        android:textSize="15sp" />
                     <TextView
                         android:id="@+id/lbl_night"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Night light"
-                        android:textColor="#99000000"
-                        android:textSize="8sp"
+                        android:layout_marginTop="3dp"
+                        android:text="Night"
+                        android:textColor="#88000000"
+                        android:textSize="9sp"
                         android:maxLines="1" />
                 </LinearLayout>
 
             </GridLayout>
 
-            <!-- ── BRIGHTNESS SLIDER ──────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:layout_marginBottom="6dp">
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@android:drawable/ic_menu_compass"
-                    app:tint="#99000000"
-                    android:contentDescription="Brightness" />
-                <SeekBar
-                    android:id="@+id/brightness_slider"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:max="100"
-                    android:progress="70"
-                    android:progressTint="#FF0078D4"
-                    android:thumbTint="#FF0078D4" />
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_win11_settings"
-                    app:tint="#99000000"
-                    android:contentDescription="Display settings" />
-            </LinearLayout>
-
-            <!-- ── VOLUME SLIDER ──────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:layout_marginBottom="12dp">
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@android:drawable/ic_lock_silent_mode_off"
-                    app:tint="#99000000"
-                    android:contentDescription="Volume" />
-                <SeekBar
-                    android:id="@+id/volume_slider"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:max="100"
-                    android:progress="45"
-                    android:progressTint="#FF0078D4"
-                    android:thumbTint="#FF0078D4" />
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_win11_settings"
-                    app:tint="#99000000"
-                    android:contentDescription="Sound settings" />
-            </LinearLayout>
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#18000000"
-                android:layout_marginBottom="12dp" />
-
-            <!-- ── NOTIFICATIONS HEADER ───────────────────────────── -->
+            <!-- ── BRIGHTNESS ────────────────────────────────────── -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -243,14 +179,112 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="8dp">
                 <TextView
+                    android:layout_width="18dp"
+                    android:layout_height="wrap_content"
+                    android:text="☀"
+                    android:textSize="14sp"
+                    android:textColor="#88000000" />
+                <SeekBar
+                    android:id="@+id/brightness_slider"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:max="255"
+                    android:progress="200"
+                    android:progressTint="#FF0078D4"
+                    android:thumbTint="#FF0078D4" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_win11_settings"
+                    app:tint="#88000000"
+                    android:contentDescription="Display settings" />
+            </LinearLayout>
+
+            <!-- ── VOLUME ─────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="18dp">
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_lock_silent_mode_off"
+                    app:tint="#88000000"
+                    android:contentDescription="Volume" />
+                <SeekBar
+                    android:id="@+id/volume_slider"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:max="100"
+                    android:progress="50"
+                    android:progressTint="#FF0078D4"
+                    android:thumbTint="#FF0078D4" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_win11_settings"
+                    app:tint="#88000000"
+                    android:contentDescription="Sound settings" />
+            </LinearLayout>
+
+            <!-- ── BATTERY ROW ───────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="18dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:id="@+id/battery_percent"
+                    android:text="🔋 100%"
+                    android:textColor="#CC000000"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-medium" />
+                <TextView
+                    android:id="@+id/btn_more_settings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Settings ›"
+                    android:textColor="#FF0078D4"
+                    android:textSize="12sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#14000000"
+                android:layout_marginBottom="14dp" />
+
+            <!-- ── NOTIFICATIONS HEADER ──────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+                <TextView
                     android:id="@+id/cc_notif_header"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Notifications"
                     android:textColor="#FF000000"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium" />
                 <TextView
                     android:id="@+id/btn_clear_all"
                     android:layout_width="wrap_content"
@@ -262,60 +296,38 @@
                     android:focusable="true" />
             </LinearLayout>
 
-            <!-- ── LIVE NOTIFICATION LIST ─────────────────────────── -->
+            <!-- ── LIVE NOTIFICATIONS ────────────────────────────── -->
             <LinearLayout
                 android:id="@+id/notification_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="6dp" />
 
-            <!-- Empty state (shown when no notifications) -->
-            <TextView
+            <!-- Empty state -->
+            <LinearLayout
                 android:id="@+id/cc_notif_empty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
+                android:orientation="vertical"
                 android:padding="20dp"
-                android:text="No new notifications"
-                android:textColor="#88000000"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#18000000"
-                android:layout_marginBottom="12dp" />
-
-            <!-- ── MORE SETTINGS LINK ─────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:layout_marginBottom="4dp">
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_win11_settings"
-                    app:tint="#99000000"
-                    android:contentDescription="Settings" />
+                android:visibility="gone">
                 <TextView
-                    android:id="@+id/btn_more_settings"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="More settings"
-                    android:textColor="#99000000"
-                    android:textSize="12sp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                    android:text="🔕"
+                    android:textSize="28sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="No new notifications"
+                    android:textColor="#88000000"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif" />
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
-
 </FrameLayout>

@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Win11 portrait taskbar: light pill, centered icons, tray on right -->
+<!-- Win11 Ultra-glass taskbar pill — layered shadow, frosted white, specular highlight -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="56dp">
+    android:layout_height="58dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
+    <!-- Main glass pill -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/taskbar_light_pill"
+        android:background="@drawable/taskbar_pill_glass"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
-        <!-- ── LEFT: Start + Search ─────────────────────────────────── -->
+        <!-- ── LEFT: Start + Search ──────────────────────────────── -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -22,17 +25,17 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- Win logo -->
+            <!-- Win logo button -->
             <FrameLayout
                 android:id="@+id/btn_start_orb"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
-                android:background="@drawable/taskbar_icon_hover"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_start"
                     android:contentDescription="Start" />
@@ -44,9 +47,9 @@
                 android:layout_width="0dp"
                 android:layout_height="34dp"
                 android:layout_weight="1"
-                android:layout_marginStart="6dp"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/win11_search_bar"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/search_bar_glass_light"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="10dp"
@@ -54,8 +57,8 @@
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
                     android:src="@drawable/ic_win11_search"
                     android:contentDescription="Search" />
                 <TextView
@@ -63,13 +66,14 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:text="Search"
-                    android:textColor="#99000000"
-                    android:textSize="13sp" />
+                    android:textColor="#88000000"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif" />
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- ── CENTER: Pinned app icons ─────────────────────────────── -->
+        <!-- ── CENTER: Pinned icons ──────────────────────────────── -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -81,7 +85,7 @@
                 android:id="@+id/btn_taskbar_taskview"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@drawable/taskbar_icon_hover"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
@@ -97,7 +101,7 @@
                 android:id="@+id/btn_taskbar_explorer"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@drawable/taskbar_icon_hover"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
@@ -108,12 +112,12 @@
                     android:contentDescription="File Explorer" />
             </FrameLayout>
 
-            <!-- Edge -->
+            <!-- Edge / Browser -->
             <FrameLayout
                 android:id="@+id/btn_taskbar_browser"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@drawable/taskbar_icon_hover"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
@@ -121,7 +125,7 @@
                     android:layout_height="22dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_edge"
-                    android:contentDescription="Edge" />
+                    android:contentDescription="Browser" />
             </FrameLayout>
 
             <!-- Settings -->
@@ -129,18 +133,18 @@
                 android:id="@+id/btn_taskbar_settings"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@drawable/taskbar_icon_hover"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_settings"
                     android:contentDescription="Settings" />
             </FrameLayout>
 
-            <!-- Active windows — injected dynamically -->
+            <!-- Dynamic window icons injected here -->
             <LinearLayout
                 android:id="@+id/taskbar_items_container"
                 android:layout_width="wrap_content"
@@ -150,7 +154,7 @@
 
         </LinearLayout>
 
-        <!-- ── RIGHT: System tray ────────────────────────────────────── -->
+        <!-- ── RIGHT: System tray ────────────────────────────────── -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -158,44 +162,47 @@
             android:gravity="center_vertical|end"
             android:orientation="horizontal">
 
-            <!-- Tray icons -->
+            <!-- Tray icons + clock (clickable → control center) -->
             <LinearLayout
                 android:id="@+id/taskbar_system_tray"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:background="@drawable/taskbar_icon_hover"
+                android:layout_height="44dp"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
                 <!-- Network -->
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
+                    android:id="@+id/tray_network"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
                     android:src="@android:drawable/ic_menu_upload"
                     android:rotation="180"
                     android:contentDescription="Network" />
 
                 <!-- Volume -->
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
+                    android:id="@+id/tray_volume"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginStart="5dp"
                     android:src="@android:drawable/ic_lock_silent_mode_off"
                     android:contentDescription="Volume" />
 
                 <!-- Battery -->
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
-                    android:src="@android:drawable/ic_lock_idle_low_battery"
-                    android:contentDescription="Battery" />
+                <TextView
+                    android:id="@+id/tray_battery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:text="🔋"
+                    android:textSize="13sp" />
 
-                <!-- Clock + Date stacked -->
+                <!-- Clock + Date -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -206,27 +213,30 @@
                         android:id="@+id/taskbar_time"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="4:42 PM"
+                        android:text="12:00 PM"
                         android:textColor="#FF000000"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
+                        android:fontFamily="sans-serif-medium"
                         android:textStyle="bold" />
                     <TextView
                         android:id="@+id/taskbar_date"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="5/20/2026"
-                        android:textColor="#99000000"
-                        android:textSize="9sp" />
+                        android:text="5/4/2026"
+                        android:textColor="#88000000"
+                        android:textSize="9sp"
+                        android:fontFamily="sans-serif" />
                 </LinearLayout>
+
             </LinearLayout>
 
             <!-- Notification badge -->
             <FrameLayout
                 android:id="@+id/btn_notifications"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginStart="4dp"
-                android:background="@drawable/taskbar_icon_hover"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginStart="3dp"
+                android:background="@drawable/taskbar_icon_ripple"
                 android:clickable="true"
                 android:focusable="true">
                 <TextView
@@ -236,13 +246,14 @@
                     android:layout_gravity="center"
                     android:background="@drawable/win11_active_indicator"
                     android:gravity="center"
-                    android:text="3"
+                    android:text="0"
                     android:textColor="@color/white"
                     android:textSize="9sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
+                    android:visibility="invisible" />
             </FrameLayout>
 
         </LinearLayout>
-
     </LinearLayout>
 </FrameLayout>

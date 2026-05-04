@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Win11 floating window — white bg, proper title bar, portrait-friendly size -->
+<!-- Win11 floating window — ultra-glass chrome, layered shadow, frosted body -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/window_bg"
-    android:elevation="12dp"
-    android:orientation="vertical">
+    android:background="@drawable/window_chrome_bg"
+    android:elevation="16dp"
+    android:orientation="vertical"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- ── Title Bar ──────────────────────────────────────────────────── -->
+    <!-- ── Glass Title Bar ─────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/window_title_bar"
         android:layout_width="match_parent"
         android:layout_height="36dp"
-        android:background="@drawable/window_titlebar"
+        android:background="@drawable/window_titlebar_glass"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="12dp">
 
+        <!-- App icon -->
         <ImageView
             android:id="@+id/window_icon"
             android:layout_width="16dp"
@@ -25,6 +27,7 @@
             android:src="@drawable/ic_win11_folder"
             android:scaleType="fitCenter" />
 
+        <!-- Title -->
         <TextView
             android:id="@+id/window_title"
             android:layout_width="0dp"
@@ -32,54 +35,78 @@
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:text="Window"
-            android:textColor="#FF000000"
-            android:textSize="12sp" />
+            android:textColor="#CC000000"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-        <!-- Min -->
-        <TextView
+        <!-- Minimize ─ -->
+        <FrameLayout
             android:id="@+id/btn_window_minimize"
             android:layout_width="46dp"
             android:layout_height="36dp"
-            android:background="@drawable/win_btn_minmax"
-            android:gravity="center"
-            android:text="—"
-            android:textColor="#66000000"
-            android:textSize="14sp"
+            android:background="@drawable/win_btn_minmax_glass"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true"
+            android:gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="—"
+                android:textColor="#66000000"
+                android:textSize="15sp" />
+        </FrameLayout>
 
-        <!-- Max -->
-        <TextView
+        <!-- Maximize ⬜ -->
+        <FrameLayout
             android:id="@+id/btn_window_maximize"
             android:layout_width="46dp"
             android:layout_height="36dp"
-            android:background="@drawable/win_btn_minmax"
-            android:gravity="center"
-            android:text="⬜"
-            android:textColor="#66000000"
-            android:textSize="11sp"
+            android:background="@drawable/win_btn_minmax_glass"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="⬜"
+                android:textColor="#66000000"
+                android:textSize="11sp" />
+        </FrameLayout>
 
-        <!-- Close -->
-        <TextView
+        <!-- Close ✕ -->
+        <FrameLayout
             android:id="@+id/btn_window_close"
             android:layout_width="46dp"
             android:layout_height="36dp"
-            android:background="@drawable/win_btn_close"
-            android:gravity="center"
-            android:text="✕"
-            android:textColor="#CC000000"
-            android:textSize="14sp"
+            android:background="@drawable/win_btn_close_glass"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="✕"
+                android:textColor="#AA000000"
+                android:textSize="13sp" />
+        </FrameLayout>
 
     </LinearLayout>
 
-    <!-- ── Content ────────────────────────────────────────────────────── -->
+    <!-- Window body separator -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#0C000000" />
+
+    <!-- ── Content area ──────────────────────────────────────────── -->
     <FrameLayout
         android:id="@+id/window_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="#FAFCFF"
+        android:clipChildren="true" />
 
 </LinearLayout>

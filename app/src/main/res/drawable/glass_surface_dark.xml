@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Deep shadow layer -->
+    <item android:left="2dp" android:top="4dp" android:right="-2dp" android:bottom="-4dp">
+        <shape>
+            <solid android:color="#28000000" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+    <!-- Main glass surface -->
+    <item>
+        <shape>
+            <solid android:color="#E6141418" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="#22FFFFFF" />
+        </shape>
+    </item>
+    <!-- Top highlight sheen -->
+    <item android:bottom="50%">
+        <shape>
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#18FFFFFF"
+                android:endColor="#00FFFFFF" />
+            <corners android:topLeftRadius="18dp" android:topRightRadius="18dp"
+                android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -3,12 +3,14 @@ package com.example.forthewin
 import android.app.admin.DevicePolicyManager
 import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -66,18 +68,27 @@ class MainActivity : AppCompatActivity() {
     private lateinit var iconPackManager: IconPackManager
     private lateinit var desktopManager: com.example.forthewin.ui.controllers.DesktopManager
     private lateinit var widgetManager: com.example.forthewin.ui.controllers.WidgetManager
+    private lateinit var quickSettings: QuickSettingsManager
+    private lateinit var gestureController: GestureController
 
-    // Live notifications from NotificationListenerService
+    // Live notifications
     private data class LiveNotif(val key: String, val pkg: String, val title: String, val text: String, val time: String)
     private val liveNotifications = LinkedHashMap<String, LiveNotif>()
 
     private fun AppModel.bestIcon() = resolvedIcon(iconPackManager)
 
-    // ── Widget picker ───────────────────────────────────────────────────
+    // ── Wallpaper picker ──────────────────────────────────────────────
+    private val wallpaperPickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val ok = WallpaperHelper.setFromUri(this, uri)
+            Snackbar.make(binding.root, if (ok) "Wallpaper set!" else "Couldn't set wallpaper", Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    // ── Widget picker ─────────────────────────────────────────────────
     private val widgetPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
-            val data = result.data
-            val appWidgetId = data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
+            val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
             if (appWidgetId != -1) {
                 val hostView = widgetHostManager.createWidgetView(appWidgetId)
                 if (hostView != null) widgetManager.addWidget(hostView)
@@ -85,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ── Notification broadcast receiver ────────────────────────────────
+    // ── Notification receiver ─────────────────────────────────────────
     private val notifReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
@@ -97,19 +108,19 @@ class MainActivity : AppCompatActivity() {
                     val time  = intent.getStringExtra(NotificationService.EXTRA_WHEN)  ?: ""
                     liveNotifications[key] = LiveNotif(key, pkg, title, text, time)
                     updateNotificationPanel()
+                    updateNotificationBadge(liveNotifications.size)
                 }
                 NotificationService.ACTION_NOTIF_REMOVED -> {
                     val key = intent.getStringExtra(NotificationService.EXTRA_KEY) ?: return
                     liveNotifications.remove(key)
                     updateNotificationPanel()
-                }
-                NotificationService.ACTION_NOTIF_LIST -> {
-                    updateNotificationPanel()
+                    updateNotificationBadge(liveNotifications.size)
                 }
             }
         }
     }
 
+    // ── onCreate ──────────────────────────────────────────────────────
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -117,28 +128,30 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.appBarMain.toolbar)
         supportActionBar?.hide()
 
-        statsManager = SystemStatsManager(this)
-        fileIndexer = FileIndexer(this)
+        statsManager  = SystemStatsManager(this)
+        fileIndexer   = FileIndexer(this)
         iconPackManager = (application as LauncherApplication).iconPackManager
+        quickSettings = QuickSettingsManager(this, window)
 
         setupManagers()
         checkPermissions()
         loadApps()
         populateDesktopIcons()
-        startWidgetUpdates()
+        startUpdates()
         setupTaskbar()
         setupControlCenter()
         applyThemeToControlCenter()
+        setupGestures()
 
         widgetHostManager.startListening()
 
-        // Register notification receiver
-        val filter = IntentFilter().apply {
-            addAction(NotificationService.ACTION_NOTIF_POSTED)
-            addAction(NotificationService.ACTION_NOTIF_REMOVED)
-            addAction(NotificationService.ACTION_NOTIF_LIST)
-        }
-        LocalBroadcastManager.getInstance(this).registerReceiver(notifReceiver, filter)
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            notifReceiver,
+            IntentFilter().apply {
+                addAction(NotificationService.ACTION_NOTIF_POSTED)
+                addAction(NotificationService.ACTION_NOTIF_REMOVED)
+            }
+        )
 
         val navHostFragment =
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
@@ -146,9 +159,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.navView?.let {
             appBarConfiguration = AppBarConfiguration(
-                setOf(
-                    R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings
-                ),
+                setOf(R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings),
                 binding.drawerLayout
             )
             setupActionBarWithNavController(navController, appBarConfiguration)
@@ -157,34 +168,33 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val startMenu    = binding.appBarMain.contentMain.startMenuPanel?.root
+                val startMenu     = binding.appBarMain.contentMain.startMenuPanel?.root
                 val controlCenter = binding.appBarMain.contentMain.controlCenterPanel?.root
-
-                if (startMenu?.visibility == View.VISIBLE) {
-                    toggleStartMenu(false)
-                } else if (controlCenter?.visibility == View.VISIBLE) {
-                    toggleControlCenter(false)
-                } else if (desktopManager.isEditMode()) {
-                    desktopManager.setEditMode(false)
-                } else {
-                    val windowContainer = binding.appBarMain.contentMain.floatingWindowContainer
-                    if (windowContainer != null && windowContainer.childCount > 0) {
-                        windowContainer.removeViewAt(windowContainer.childCount - 1)
+                when {
+                    startMenu?.visibility == View.VISIBLE     -> toggleStartMenu(false)
+                    controlCenter?.visibility == View.VISIBLE -> toggleControlCenter(false)
+                    desktopManager.isEditMode()               -> desktopManager.setEditMode(false)
+                    else -> {
+                        val wc = binding.appBarMain.contentMain.floatingWindowContainer
+                        if (wc != null && wc.childCount > 0) wc.removeViewAt(wc.childCount - 1)
                     }
                 }
             }
         })
     }
 
+    // ── Managers init ─────────────────────────────────────────────────
     private fun setupManagers() {
-        taskbarManager = TaskbarManager(this, binding.appBarMain.contentMain.customTaskbar!!) { packageName ->
-            launchApp(packageName)
-        }
+        taskbarManager = TaskbarManager(
+            this,
+            binding.appBarMain.contentMain.customTaskbar!!
+        ) { launchApp(it) }
+
         windowManager = WindowManagerController(
             this,
             binding.appBarMain.contentMain.floatingWindowContainer!!,
-            { title, icon, window -> taskbarManager.addWindowIcon(title, icon, window) },
-            { window -> taskbarManager.removeWindowIcon(window) }
+            { title, icon, win -> taskbarManager.addWindowIcon(title, icon, win) },
+            { win -> taskbarManager.removeWindowIcon(win) }
         )
         widgetHostManager = WidgetHostManager(this)
 
@@ -192,7 +202,7 @@ class MainActivity : AppCompatActivity() {
             this,
             binding.appBarMain.contentMain.desktopIconsGrid!!,
             iconPackManager
-        ) { packageName -> launchApp(packageName) }
+        ) { launchApp(it) }
 
         widgetManager = com.example.forthewin.ui.controllers.WidgetManager(
             this,
@@ -202,101 +212,306 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivity(intent)
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+        }
+    }
+
+    // ── Gestures ──────────────────────────────────────────────────────
+    private fun setupGestures() {
+        val desktopLayer = binding.appBarMain.contentMain.desktopIconsGrid ?: return
+        gestureController = GestureController(
+            context        = this,
+            onSwipeUp      = { 
+                val start = binding.appBarMain.contentMain.startMenuPanel ?: return@GestureController
+                if (start.root.visibility == View.GONE) {
+                    toggleControlCenter(false)
+                    toggleStartMenu(true)
+                    setupStartMenuActions(start)
+                }
+            },
+            onSwipeDown    = {
+                val cc = binding.appBarMain.contentMain.controlCenterPanel
+                if (cc?.root?.visibility == View.GONE) {
+                    toggleStartMenu(false)
+                    toggleControlCenter(true)
+                }
+            },
+            onDoubleTap    = { if (desktopManager.isEditMode()) desktopManager.setEditMode(false) }
+        )
+        gestureController.attachTo(desktopLayer)
+        
+        // Long-press desktop → context menu
+        desktopLayer.setOnLongClickListener {
+            if (!desktopManager.isEditMode()) showDesktopContextMenu(it)
+            true
+        }
+    }
+
+    // ── Taskbar ───────────────────────────────────────────────────────
+    private fun setupTaskbar() {
+        val taskbarRoot       = binding.appBarMain.contentMain.customTaskbar?.root ?: return
+        val startMenuBinding  = binding.appBarMain.contentMain.startMenuPanel ?: return
+        val controlCenterBind = binding.appBarMain.contentMain.controlCenterPanel ?: return
+        val startMenu         = startMenuBinding.root
+        val controlCenter     = controlCenterBind.root
+
+        taskbarRoot.findViewById<View>(R.id.btn_start_orb)?.setOnClickListener {
+            if (startMenu.visibility == View.GONE) {
+                toggleControlCenter(false); toggleStartMenu(true)
+                setupStartMenuActions(startMenuBinding)
+            } else toggleStartMenu(false)
+        }
+
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_search)?.setOnClickListener {
+            // Focus the search in start menu (open if needed)
+            if (startMenu.visibility == View.GONE) {
+                toggleControlCenter(false); toggleStartMenu(true)
+                setupStartMenuActions(startMenuBinding)
+            }
+            startMenuBinding.startSearchInput.requestFocus()
+        }
+
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_taskview)?.setOnClickListener {
+            Snackbar.make(binding.root, "Task View", Snackbar.LENGTH_SHORT).show()
+        }
+
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_explorer)?.setOnClickListener { openFileExplorer() }
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_browser)?.setOnClickListener  { openBrowser() }
+        taskbarRoot.findViewById<View>(R.id.btn_taskbar_settings)?.setOnClickListener {
+            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+        }
+
+        val openCC = { ->
+            if (controlCenter.visibility == View.GONE) {
+                toggleStartMenu(false); toggleControlCenter(true)
+            } else toggleControlCenter(false)
+        }
+        taskbarRoot.findViewById<View>(R.id.taskbar_system_tray)?.setOnClickListener { openCC() }
+        taskbarRoot.findViewById<View>(R.id.btn_notifications)?.setOnClickListener   { openCC() }
+
+        // Resize by dragging top strip
+        setupTaskbarResize(taskbarRoot)
+
+        // Long-press taskbar → desktop context
+        taskbarRoot.setOnLongClickListener { showDesktopContextMenu(it); true }
+    }
+
+    private fun setupTaskbarResize(taskbarRoot: View) {
+        val density = resources.displayMetrics.density
+        var startY = -1f
+        var startH = 0
+
+        taskbarRoot.setOnTouchListener { v, event ->
+            val topZone = 12 * density
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if (event.y < topZone) {
+                        startY = event.rawY; startH = v.height; true
+                    } else false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (startY >= 0f) {
+                        val newH = (startH + (startY - event.rawY))
+                            .coerceIn(44 * density, 72 * density).toInt()
+                        v.layoutParams = v.layoutParams.also { it.height = newH }
+                        true
+                    } else false
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { startY = -1f; false }
+                else -> false
+            }
+        }
+    }
+
+    // ── Control Center ────────────────────────────────────────────────
+    private fun setupControlCenter() {
+        val panel = binding.appBarMain.contentMain.controlCenterPanel ?: return
+        val root  = panel.root
+
+        // Brightness slider — real brightness
+        root.findViewById<SeekBar>(R.id.brightness_slider)?.apply {
+            progress = quickSettings.getBrightness()
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar?, v: Int, user: Boolean) {
+                    if (user) quickSettings.setBrightness(v)
+                }
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            })
+        }
+
+        // Volume slider — real AudioManager
+        root.findViewById<SeekBar>(R.id.volume_slider)?.apply {
+            progress = quickSettings.getVolume()
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar?, v: Int, user: Boolean) {
+                    if (user) quickSettings.setVolume(v)
+                }
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            })
+        }
+
+        // Wifi toggle
+        root.findViewById<View>(R.id.toggle_wifi)?.setOnClickListener {
+            if (quickSettings.isWifiEnabled()) quickSettings.openWifiSettings()
+            else quickSettings.openWifiSettings()
+        }
+
+        // Bluetooth toggle
+        root.findViewById<View>(R.id.toggle_bluetooth)?.setOnClickListener {
+            quickSettings.openBluetoothSettings()
+        }
+
+        // Airplane mode → Settings
+        root.findViewById<View>(R.id.toggle_airplane)?.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        }
+
+        // Night light
+        root.findViewById<View>(R.id.toggle_night)?.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        }
+
+        // Clear all
+        root.findViewById<View>(R.id.btn_clear_all)?.setOnClickListener {
+            liveNotifications.clear()
+            updateNotificationPanel()
+            updateNotificationBadge(0)
+        }
+
+        // More settings
+        root.findViewById<View>(R.id.btn_more_settings)?.setOnClickListener {
+            toggleControlCenter(false)
+            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+        }
+
+        // Resize handle
+        setupControlCenterResize(root)
+
+        // Initial state
+        updateNotificationPanel()
+        refreshControlCenterStatus(root)
+    }
+
+    private fun refreshControlCenterStatus(root: View) {
+        val battery = quickSettings.getBatteryPercent()
+        val charging = quickSettings.isCharging()
+        val batteryIcon = when {
+            battery >= 80 -> "🔋"
+            battery >= 40 -> "🔋"
+            else          -> "🪫"
+        }
+        val chargingStr = if (charging) " ⚡" else ""
+        root.findViewById<TextView>(R.id.battery_percent)?.text = "$batteryIcon $battery%$chargingStr"
+
+        // Wifi toggle visual state
+        val wifiOn = quickSettings.isWifiEnabled()
+        root.findViewById<View>(R.id.toggle_wifi)?.background?.setTint(
+            if (wifiOn) ThemeManager.accentDim(this) else 0xFFF0F0F2.toInt()
+        )
+        root.findViewById<TextView>(R.id.lbl_wifi)?.setTextColor(
+            if (wifiOn) ThemeManager.accent(this) else 0x88000000.toInt()
+        )
+        root.findViewById<ImageView>(R.id.ic_wifi)?.imageTintList =
+            ColorStateList.valueOf(if (wifiOn) ThemeManager.accent(this) else 0x88000000.toInt())
+
+        // BT visual state
+        val btOn = quickSettings.isBluetoothEnabled()
+        root.findViewById<View>(R.id.toggle_bluetooth)?.background?.setTint(
+            if (btOn) ThemeManager.accentDim(this) else 0xFFF0F0F2.toInt()
+        )
+        root.findViewById<TextView>(R.id.lbl_bluetooth)?.setTextColor(
+            if (btOn) ThemeManager.accent(this) else 0x88000000.toInt()
+        )
+    }
+
+    private fun setupControlCenterResize(panelRoot: View) {
+        val resizeHandle = panelRoot.findViewById<View>(R.id.cc_resize_handle) ?: return
+        val density = resources.displayMetrics.density
+        var startX = 0f; var startW = 0
+        resizeHandle.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN  -> { startX = event.rawX; startW = panelRoot.width; true }
+                MotionEvent.ACTION_MOVE  -> {
+                    val newW = (startW + (startX - event.rawX))
+                        .coerceIn(260 * density, 440 * density).toInt()
+                    panelRoot.layoutParams = panelRoot.layoutParams.also { it.width = newW }
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { startX = 0f; true }
+                else -> false
+            }
         }
     }
 
     // ── Theme ─────────────────────────────────────────────────────────
-
     fun applyThemeToControlCenter() {
-        val panel = binding.appBarMain.contentMain.controlCenterPanel?.root ?: return
-        val dark = ThemeManager.isDark(this)
+        val panel  = binding.appBarMain.contentMain.controlCenterPanel?.root ?: return
         val accent = ThemeManager.accent(this)
-        val bg = ThemeManager.surfaceBg(this)
-        val textPrimary = ThemeManager.panelText(this)
-        val textSecondary = ThemeManager.panelTextSecondary(this)
+        val isDark = ThemeManager.isDark(this)
+        val bg     = ThemeManager.surfaceBg(this)
+        val text   = ThemeManager.panelText(this)
+        val textSec= ThemeManager.panelTextSecondary(this)
 
-        // Panel background
-        val scrollView = panel.findViewById<View>(R.id.cc_scroll)
-        scrollView?.background?.setTint(bg)
-
-        // Header text
-        panel.findViewById<TextView>(R.id.cc_notif_header)?.setTextColor(textPrimary)
-
-        // Clear all color
+        panel.findViewById<TextView>(R.id.cc_notif_header)?.setTextColor(text)
         panel.findViewById<TextView>(R.id.btn_clear_all)?.setTextColor(accent)
+        panel.findViewById<TextView>(R.id.btn_more_settings)?.setTextColor(accent)
 
-        // Sliders
         listOf(R.id.brightness_slider, R.id.volume_slider).forEach { id ->
-            val sb = panel.findViewById<SeekBar>(id)
-            sb?.progressTintList = ColorStateList.valueOf(accent)
-            sb?.thumbTintList = ColorStateList.valueOf(accent)
+            val sb = panel.findViewById<SeekBar>(id) ?: return@forEach
+            sb.progressTintList = ColorStateList.valueOf(accent)
+            sb.thumbTintList    = ColorStateList.valueOf(accent)
         }
 
-        // Toggle on background accent color
-        val toggleOnBg = if (dark)
-            android.graphics.drawable.GradientDrawable().apply {
-                setColor((accent and 0x00FFFFFF) or 0x44000000)
-                cornerRadius = 8f * resources.displayMetrics.density
-                setStroke((1f * resources.displayMetrics.density).toInt(),
-                    (accent and 0x00FFFFFF) or 0x66000000)
-            }
-        else null // use drawable resource for light
-
-        panel.findViewById<View>(R.id.toggle_wifi)?.let { v ->
-            v.backgroundTintList = ColorStateList.valueOf(
-                if (dark) (accent and 0x00FFFFFF) or 0x44000000 else (accent and 0x00FFFFFF) or 0x22000000
-            )
-            v.findViewById<ImageView>(R.id.ic_wifi)?.imageTintList = ColorStateList.valueOf(accent)
-            v.findViewById<TextView>(R.id.lbl_wifi)?.setTextColor(accent)
-        }
-
-        // Notification empty state
-        panel.findViewById<TextView>(R.id.cc_notif_empty)?.setTextColor(textSecondary)
-
-        // Apply to notification list items
-        updateNotificationPanel()
+        // Tray badge
+        val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root
+        taskbarRoot?.findViewById<TextView>(R.id.notification_count)
+            ?.backgroundTintList = ColorStateList.valueOf(accent)
     }
 
-    // ── Notification Panel ─────────────────────────────────────────────
+    fun applyTheme(dark: Boolean, redAccent: Boolean) {
+        ThemeManager.setDark(this, dark)
+        ThemeManager.setRedAccent(this, redAccent)
+        applyThemeToControlCenter()
+    }
 
+    // ── Notification panel ────────────────────────────────────────────
     private fun updateNotificationPanel() {
         val panel = binding.appBarMain.contentMain.controlCenterPanel?.root ?: return
-        val list = panel.findViewById<LinearLayout>(R.id.notification_list) ?: return
-        val emptyView = panel.findViewById<TextView>(R.id.cc_notif_empty)
+        val list  = panel.findViewById<LinearLayout>(R.id.notification_list) ?: return
+        val empty = panel.findViewById<View>(R.id.cc_notif_empty)
 
         list.removeAllViews()
 
         if (liveNotifications.isEmpty()) {
-            emptyView?.visibility = View.VISIBLE
-            // Update badge
-            updateNotificationBadge(0)
+            empty?.visibility = View.VISIBLE
         } else {
-            emptyView?.visibility = View.GONE
-            val dark = ThemeManager.isDark(this)
-            val accent = ThemeManager.accent(this)
-            val cardBg = ThemeManager.cardBg(this)
-            val textPrimary = ThemeManager.panelText(this)
-            val textSecondary = ThemeManager.panelTextSecondary(this)
+            empty?.visibility = View.GONE
+            val accent    = ThemeManager.accent(this)
+            val cardBg    = ThemeManager.cardBg(this)
+            val textPri   = ThemeManager.panelText(this)
+            val textSec   = ThemeManager.panelTextSecondary(this)
+            val isDark    = ThemeManager.isDark(this)
 
-            liveNotifications.values.reversed().take(10).forEach { notif ->
+            liveNotifications.values.reversed().take(12).forEach { notif ->
                 val card = layoutInflater.inflate(R.layout.item_notification_cc, list, false)
 
-                card.setBackgroundColor(cardBg)
-                card.background?.let {
-                    val bg = android.graphics.drawable.GradientDrawable().apply {
-                        setColor(cardBg)
-                        cornerRadius = 8f * resources.displayMetrics.density
-                        setStroke(
-                            (1f * resources.displayMetrics.density).toInt(),
-                            if (dark) 0x33FFFFFF else 0x18000000
-                        )
-                    }
-                    card.background = bg
+                // Dynamic card background matching theme
+                val bgColor = if (isDark) 0xFF2C2C2E.toInt() else 0xFFFAFAFA.toInt()
+                val stroke  = if (isDark) 0x33FFFFFF else 0x14000000
+                val shape = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(bgColor)
+                    cornerRadius = 10f * resources.displayMetrics.density
+                    setStroke((1f * resources.displayMetrics.density).toInt(), stroke)
                 }
+                card.background = shape
 
-                // Try to get app icon
+                // Real app icon
                 val iconView = card.findViewById<ImageView>(R.id.notif_icon)
                 try {
                     iconView?.setImageDrawable(packageManager.getApplicationIcon(notif.pkg))
@@ -306,243 +521,114 @@ class MainActivity : AppCompatActivity() {
                     iconView?.setColorFilter(accent)
                 }
 
+                // App name (human-readable label)
                 card.findViewById<TextView>(R.id.notif_app_name)?.apply {
                     text = try {
                         packageManager.getApplicationLabel(
                             packageManager.getApplicationInfo(notif.pkg, 0)
                         ).toString()
                     } catch (e: Exception) { notif.pkg }
-                    setTextColor(textSecondary)
+                    setTextColor(textSec)
                 }
                 card.findViewById<TextView>(R.id.notif_title)?.apply {
-                    text = notif.title
-                    setTextColor(textPrimary)
+                    text = notif.title; setTextColor(textPri)
                 }
                 card.findViewById<TextView>(R.id.notif_content)?.apply {
-                    text = notif.text
-                    setTextColor(textSecondary)
+                    text = notif.text; setTextColor(textSec)
                 }
                 card.findViewById<TextView>(R.id.notif_time)?.apply {
-                    text = notif.time
-                    setTextColor(textSecondary)
+                    text = notif.time; setTextColor(textSec)
                 }
-
-                // Dismiss button
-                card.findViewById<View>(R.id.notif_dismiss)?.setOnClickListener {
-                    liveNotifications.remove(notif.key)
-                    card.animate().alpha(0f).translationX(60f).setDuration(200)
-                        .withEndAction { list.removeView(card); updateNotificationPanel() }
-                        .start()
-                }
-
-                // Blue/red dot indicator
                 card.findViewById<View>(R.id.notif_dot)?.backgroundTintList =
                     ColorStateList.valueOf(accent)
 
+                // Dismiss
+                card.findViewById<View>(R.id.notif_dismiss)?.setOnClickListener {
+                    liveNotifications.remove(notif.key)
+                    card.animate().alpha(0f).translationX(48f).setDuration(200)
+                        .withEndAction { list.removeView(card); updateNotificationPanel(); updateNotificationBadge(liveNotifications.size) }
+                        .start()
+                }
+
                 list.addView(card)
             }
-            updateNotificationBadge(liveNotifications.size)
         }
     }
 
     private fun updateNotificationBadge(count: Int) {
-        val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root ?: return
-        val badge = taskbarRoot.findViewById<TextView>(R.id.notification_count)
-        badge?.text = if (count > 9) "9+" else count.toString()
-        badge?.visibility = if (count > 0) View.VISIBLE else View.INVISIBLE
+        val badge = binding.appBarMain.contentMain.customTaskbar?.root
+            ?.findViewById<TextView>(R.id.notification_count) ?: return
+        badge.text = if (count > 9) "9+" else count.toString()
+        badge.visibility = if (count > 0) View.VISIBLE else View.INVISIBLE
     }
 
-    // ── Taskbar ────────────────────────────────────────────────────────
-
-    private fun setupTaskbar() {
-        val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root ?: return
-        val startMenuBinding = binding.appBarMain.contentMain.startMenuPanel ?: return
-        val controlCenterBinding = binding.appBarMain.contentMain.controlCenterPanel ?: return
-        val startMenu = startMenuBinding.root
-        val controlCenter = controlCenterBinding.root
-
-        taskbarRoot.findViewById<View>(R.id.btn_start_orb)?.setOnClickListener {
-            if (startMenu.visibility == View.GONE) {
-                toggleControlCenter(false)
-                toggleStartMenu(true)
-                setupStartMenuActions(startMenuBinding)
-            } else {
-                toggleStartMenu(false)
-            }
-        }
-
-        taskbarRoot.findViewById<View>(R.id.btn_taskbar_search)?.setOnClickListener {
-            Snackbar.make(binding.root, "Search", Snackbar.LENGTH_SHORT).show()
-        }
-
-        taskbarRoot.findViewById<View>(R.id.btn_taskbar_taskview)?.setOnClickListener {
-            Snackbar.make(binding.root, "Task View", Snackbar.LENGTH_SHORT).show()
-        }
-
-        taskbarRoot.findViewById<View>(R.id.btn_taskbar_explorer)?.setOnClickListener {
-            openFileExplorer()
-        }
-
-        taskbarRoot.findViewById<View>(R.id.btn_taskbar_browser)?.setOnClickListener {
-            openBrowser()
-        }
-
-        taskbarRoot.findViewById<View>(R.id.btn_taskbar_settings)?.setOnClickListener {
-            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
-        }
-
-        taskbarRoot.findViewById<View>(R.id.taskbar_system_tray)?.setOnClickListener {
-            if (controlCenter.visibility == View.GONE) {
-                toggleStartMenu(false)
-                toggleControlCenter(true)
-            } else {
-                toggleControlCenter(false)
-            }
-        }
-
-        taskbarRoot.findViewById<View>(R.id.btn_notifications)?.setOnClickListener {
-            if (controlCenter.visibility == View.GONE) {
-                toggleStartMenu(false)
-                toggleControlCenter(true)
-            } else {
-                toggleControlCenter(false)
-            }
-        }
-
-        // ── Taskbar resize (drag top edge to resize height) ────────────
-        setupTaskbarResize(taskbarRoot)
-
-        // ── Taskbar long-press for context menu ────────────────────────
-        taskbarRoot.setOnLongClickListener {
-            showDesktopContextMenu(it)
-            true
-        }
-    }
-
-    private fun setupTaskbarResize(taskbarRoot: View) {
-        // The top edge of the taskbar container — drag up to make taller, down to shrink
-        val minHeightDp = 44f
-        val maxHeightDp = 72f
-        val density = resources.displayMetrics.density
-        var startY = 0f
-        var startHeight = 0
-
-        taskbarRoot.setOnTouchListener { v, event ->
-            // Only activate in the top 12dp strip for resize
-            val topZonePx = 12 * density
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    if (event.y < topZonePx) {
-                        startY = event.rawY
-                        startHeight = v.height
-                        true
-                    } else false
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (startY > 0f) {
-                        val delta = startY - event.rawY
-                        val newH = (startHeight + delta)
-                            .coerceIn(minHeightDp * density, maxHeightDp * density)
-                            .toInt()
-                        val lp = v.layoutParams
-                        lp.height = newH
-                        v.layoutParams = lp
-                        true
-                    } else false
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    startY = 0f
-                    false
-                }
-                else -> false
-            }
-        }
-    }
-
-    // ── Control Center resize ──────────────────────────────────────────
-
-    private fun setupControlCenterResize(panelRoot: View) {
-        val resizeHandle = panelRoot.findViewById<View>(R.id.cc_resize_handle) ?: return
-        val density = resources.displayMetrics.density
-        val minWidthDp = 260f
-        val maxWidthDp = 440f
-        var startX = 0f
-        var startWidth = 0
-
-        resizeHandle.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = event.rawX
-                    startWidth = panelRoot.width
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val delta = startX - event.rawX
-                    val newW = (startWidth + delta)
-                        .coerceIn(minWidthDp * density, maxWidthDp * density)
-                        .toInt()
-                    val lp = panelRoot.layoutParams
-                    lp.width = newW
-                    panelRoot.layoutParams = lp
-                    true
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    startX = 0f
-                    true
-                }
-                else -> false
-            }
-        }
-    }
-
-    // ── Desktop context menu (long-press) ─────────────────────────────
-
+    // ── Desktop context menu ──────────────────────────────────────────
     private fun showDesktopContextMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
-        popup.menu.add("Add Widget")
-        popup.menu.add("Change Wallpaper")
-        popup.menu.add("Display Settings")
+        popup.menu.add(0, 1, 0, "Add Widget")
+        popup.menu.add(0, 2, 0, "Change Wallpaper")
+        popup.menu.add(0, 3, 0, "Display Settings")
+        popup.menu.add(0, 4, 0, "Personalize")
         popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "Add Widget" -> widgetHostManager.pickWidget(widgetPickerLauncher)
-                "Change Wallpaper" -> {
-                    val intent = Intent(Intent.ACTION_SET_WALLPAPER)
-                    startActivity(Intent.createChooser(intent, "Select Wallpaper"))
-                }
-                "Display Settings" -> findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+            when (item.itemId) {
+                1 -> widgetHostManager.pickWidget(widgetPickerLauncher)
+                2 -> pickWallpaper()
+                3 -> startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                4 -> findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
             }
             true
         }
         popup.show()
     }
 
-    // ── Desktop icon long-press (right-click) ─────────────────────────
-
-    private fun setupDesktopLongPress() {
-        val desktopLayer = binding.appBarMain.contentMain.desktopIconsGrid ?: return
-        desktopLayer.setOnLongClickListener {
-            if (!desktopManager.isEditMode()) {
-                showDesktopContextMenu(it)
-            }
-            true
+    private fun pickWallpaper() {
+        // Option 1: system chooser
+        try {
+            val intent = Intent(Intent.ACTION_SET_WALLPAPER)
+            startActivity(Intent.createChooser(intent, "Choose Wallpaper"))
+        } catch (e: Exception) {
+            // Option 2: gallery picker → apply ourselves
+            wallpaperPickerLauncher.launch("image/*")
         }
     }
 
-    // ── toggles ───────────────────────────────────────────────────────
+    // ── App context menu (long-press in start menu) ───────────────────
+    private fun showAppContextMenu(anchor: View, app: AppModel) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, 1, 0, "Open")
+        popup.menu.add(0, 2, 0, "Add to Home Screen")
+        popup.menu.add(0, 3, 0, "App info")
+        popup.menu.add(0, 4, 0, "Uninstall")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> { launchApp(app.packageName); toggleStartMenu(false) }
+                2 -> {
+                    desktopManager.addSingleIcon(app); toggleStartMenu(false)
+                    Snackbar.make(binding.root, "${app.label} added to desktop", Snackbar.LENGTH_SHORT).show()
+                }
+                3 -> startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:${app.packageName}")
+                })
+                4 -> startActivity(Intent(Intent.ACTION_DELETE).apply {
+                    data = Uri.parse("package:${app.packageName}")
+                })
+            }
+            true
+        }
+        popup.show()
+    }
 
+    // ── Toggles ───────────────────────────────────────────────────────
     private fun toggleStartMenu(show: Boolean) {
-        val startMenu = binding.appBarMain.contentMain.startMenuPanel?.root ?: return
+        val sm = binding.appBarMain.contentMain.startMenuPanel?.root ?: return
         if (show) {
-            startMenu.visibility = View.VISIBLE
-            startMenu.translationY = 200f
-            startMenu.alpha = 0f
-            startMenu.animate()
-                .translationY(0f).alpha(1f)
-                .setDuration(400).setInterpolator(DecelerateInterpolator()).start()
+            sm.visibility = View.VISIBLE
+            sm.translationY = 180f; sm.alpha = 0f
+            sm.animate().translationY(0f).alpha(1f).setDuration(350)
+                .setInterpolator(DecelerateInterpolator()).start()
         } else {
-            startMenu.animate()
-                .translationY(200f).alpha(0f)
-                .setDuration(300).withEndAction { startMenu.visibility = View.GONE }.start()
+            sm.animate().translationY(180f).alpha(0f).setDuration(250)
+                .withEndAction { sm.visibility = View.GONE }.start()
         }
     }
 
@@ -550,260 +636,212 @@ class MainActivity : AppCompatActivity() {
         val panel = binding.appBarMain.contentMain.controlCenterPanel?.root ?: return
         if (show) {
             panel.visibility = View.VISIBLE
-            panel.translationY = 200f
-            panel.alpha = 0f
-            panel.animate()
-                .translationY(0f).alpha(1f)
-                .setDuration(400).setInterpolator(DecelerateInterpolator()).start()
-            // Refresh notifications when opened
+            panel.translationY = 120f; panel.alpha = 0f
+            panel.animate().translationY(0f).alpha(1f).setDuration(320)
+                .setInterpolator(DecelerateInterpolator()).start()
+            refreshControlCenterStatus(panel)
             updateNotificationPanel()
         } else {
-            panel.animate()
-                .translationY(200f).alpha(0f)
-                .setDuration(300).withEndAction { panel.visibility = View.GONE }.start()
+            panel.animate().translationY(120f).alpha(0f).setDuration(250)
+                .withEndAction { panel.visibility = View.GONE }.start()
         }
     }
 
+    // ── App loading ───────────────────────────────────────────────────
     private fun loadApps() {
         allInstalledApps.clear()
-        val i = Intent(Intent.ACTION_MAIN, null)
-        i.addCategory(Intent.CATEGORY_LAUNCHER)
-        val availableActivities = packageManager.queryIntentActivities(i, 0)
-        for (ri in availableActivities) {
-            val app = AppModel(
+        val i = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+        packageManager.queryIntentActivities(i, 0).forEach { ri ->
+            allInstalledApps.add(AppModel(
                 ri.loadLabel(packageManager).toString(),
                 ri.activityInfo.packageName,
                 ri.activityInfo.name,
                 ri.activityInfo.loadIcon(packageManager)
-            )
-            allInstalledApps.add(app)
+            ))
         }
         allInstalledApps.sortBy { it.label.lowercase() }
     }
 
-    private fun startWidgetUpdates() {
+    // ── Tick updates ──────────────────────────────────────────────────
+    private fun startUpdates() {
         val runnable = object : Runnable {
             override fun run() {
-                updateWidgets()
                 updateTaskbarTray()
                 handler.postDelayed(this, 1000)
             }
         }
         handler.post(runnable)
+
+        // Battery update every 30s
+        val battRunnable = object : Runnable {
+            override fun run() {
+                val panel = binding.appBarMain.contentMain.controlCenterPanel?.root
+                if (panel != null) refreshControlCenterStatus(panel)
+                updateTrayBattery()
+                handler.postDelayed(this, 30_000)
+            }
+        }
+        handler.postDelayed(battRunnable, 5_000)
     }
 
-    private fun updateWidgets() {
-        val widgets = binding.appBarMain.contentMain.sidebarWidgets ?: return
-        val calendar = Calendar.getInstance()
-        val hours = String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY))
-        val minutes = String.format("%02d", calendar.get(Calendar.MINUTE))
-        val date = SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(calendar.time)
-
-        widgets.findViewById<TextView>(R.id.clock_hours)?.text = hours
-        widgets.findViewById<TextView>(R.id.clock_minutes)?.text = minutes
-        widgets.findViewById<TextView>(R.id.clock_date)?.text = date.uppercase()
-
-        val cpuUsage = statsManager.getCpuUsage()
-        val ramUsage = statsManager.getMemoryUsage()
-        widgets.findViewById<TextView>(R.id.cpu_value)?.text = "$cpuUsage%"
-        widgets.findViewById<ProgressBar>(R.id.cpu_progress)?.progress = cpuUsage
-        widgets.findViewById<TextView>(R.id.ram_value)?.text = "$ramUsage%"
-        widgets.findViewById<ProgressBar>(R.id.ram_progress)?.progress = ramUsage
+    private fun updateTrayBattery() {
+        val tray = binding.appBarMain.contentMain.customTaskbar?.root ?: return
+        val pct  = quickSettings.getBatteryPercent()
+        val icon = if (pct < 20) "🪫" else "🔋"
+        tray.findViewById<TextView>(R.id.tray_battery)?.text = icon
     }
 
     private fun updateTaskbarTray() {
         val taskbar = binding.appBarMain.contentMain.customTaskbar ?: return
-        val calendar = Calendar.getInstance()
-        val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(calendar.time)
-        val date = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(calendar.time)
-
+        val cal  = Calendar.getInstance()
+        val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(cal.time)
+        val date = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(cal.time)
         taskbar.root.findViewById<TextView>(R.id.taskbar_time)?.text = time
         taskbar.root.findViewById<TextView>(R.id.taskbar_date)?.text = date
     }
 
-    private fun populateDesktopIcons() {
-        val desktopApps = allInstalledApps.take(6)
-        desktopManager.setIcons(desktopApps)
-        setupDesktopLongPress()
+    private fun updateWidgets() {
+        val widgets = binding.appBarMain.contentMain.sidebarWidgets ?: return
+        val cal = Calendar.getInstance()
+        widgets.findViewById<TextView>(R.id.clock_hours)?.text =
+            String.format("%02d", cal.get(Calendar.HOUR_OF_DAY))
+        widgets.findViewById<TextView>(R.id.clock_minutes)?.text =
+            String.format("%02d", cal.get(Calendar.MINUTE))
+        widgets.findViewById<TextView>(R.id.clock_date)?.text =
+            SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(cal.time).uppercase()
+        val cpu = statsManager.getCpuUsage()
+        val ram = statsManager.getMemoryUsage()
+        widgets.findViewById<TextView>(R.id.cpu_value)?.text = "$cpu%"
+        widgets.findViewById<ProgressBar>(R.id.cpu_progress)?.progress = cpu
+        widgets.findViewById<TextView>(R.id.ram_value)?.text = "$ram%"
+        widgets.findViewById<ProgressBar>(R.id.ram_progress)?.progress = ram
     }
 
+    // ── Desktop ───────────────────────────────────────────────────────
+    private fun populateDesktopIcons() {
+        desktopManager.setIcons(allInstalledApps.take(6))
+    }
+
+    // ── App windows ───────────────────────────────────────────────────
     private fun openFileExplorer() {
         openFloatingWindow("File Explorer", R.drawable.ic_win11_folder) { container ->
-            val explorerView = layoutInflater.inflate(R.layout.layout_file_explorer, container, false)
-            container.addView(explorerView)
+            val v = layoutInflater.inflate(R.layout.layout_file_explorer, container, false)
+            container.addView(v)
 
-            val sidebarContainer = explorerView.findViewById<LinearLayout>(R.id.explorer_sidebar_container)
-            val sidebarItems = listOf(
+            val sidebarContainer = v.findViewById<LinearLayout>(R.id.explorer_sidebar_container)
+            listOf(
                 Pair("Home", R.drawable.ic_win11_folder),
-                Pair("Gallery", android.R.drawable.ic_menu_gallery),
-                Pair("OneDrive", android.R.drawable.ic_menu_upload),
                 Pair("Desktop", android.R.drawable.ic_menu_view),
                 Pair("Documents", android.R.drawable.ic_menu_agenda),
                 Pair("Downloads", android.R.drawable.ic_menu_save),
                 Pair("Pictures", android.R.drawable.ic_menu_gallery),
                 Pair("Music", android.R.drawable.ic_lock_silent_mode_off),
                 Pair("Videos", android.R.drawable.ic_menu_slideshow),
-                Pair("This PC", android.R.drawable.ic_menu_info_details),
-                Pair("Network", android.R.drawable.ic_menu_share)
-            )
-            for (item in sidebarItems) {
-                val v = layoutInflater.inflate(R.layout.item_explorer_sidebar, sidebarContainer, false)
-                v.findViewById<TextView>(R.id.sidebar_label).text = item.first
-                v.findViewById<ImageView>(R.id.sidebar_icon).setImageResource(item.second)
-                if (item.first == "Home") {
-                    v.findViewById<View>(R.id.active_indicator).visibility = View.VISIBLE
-                    v.setBackgroundColor(0x110078D4)
+                Pair("This PC", android.R.drawable.ic_menu_info_details)
+            ).forEach { (label, icon) ->
+                val item = layoutInflater.inflate(R.layout.item_explorer_sidebar, sidebarContainer, false)
+                item.findViewById<TextView>(R.id.sidebar_label).text = label
+                item.findViewById<ImageView>(R.id.sidebar_icon).setImageResource(icon)
+                if (label == "Home") {
+                    item.findViewById<View>(R.id.active_indicator).visibility = View.VISIBLE
+                    item.setBackgroundColor(0x110078D4)
                 }
-                sidebarContainer.addView(v)
+                sidebarContainer.addView(item)
             }
 
-            val quickGrid = explorerView.findViewById<GridLayout>(R.id.quick_access_grid)
-            val folders = listOf(
-                Pair("Desktop", 0xFFE74856.toInt()),
-                Pair("Documents", 0xFFFFB900.toInt()),
-                Pair("Downloads", 0xFF00B294.toInt()),
-                Pair("Pictures", 0xFFE74856.toInt()),
-                Pair("Music", 0xFFFFB900.toInt()),
-                Pair("Videos", 0xFF8764B8.toInt())
-            )
-            for ((name, color) in folders) {
-                val v = layoutInflater.inflate(R.layout.item_recommended_file, quickGrid, false)
+            val quickGrid = v.findViewById<GridLayout>(R.id.quick_access_grid)
+            listOf(
+                Triple("Desktop", 0xFFE74856.toInt(), R.drawable.ic_win11_folder),
+                Triple("Documents", 0xFFFFB900.toInt(), R.drawable.ic_win11_folder),
+                Triple("Downloads", 0xFF00B294.toInt(), R.drawable.ic_win11_folder),
+                Triple("Pictures", 0xFFE74856.toInt(), R.drawable.ic_win11_folder),
+                Triple("Music", 0xFFFFB900.toInt(), R.drawable.ic_win11_folder),
+                Triple("Videos", 0xFF8764B8.toInt(), R.drawable.ic_win11_folder)
+            ).forEach { (name, color, iconRes) ->
+                val item = layoutInflater.inflate(R.layout.item_recommended_file, quickGrid, false)
                 val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                val lp = GridLayout.LayoutParams(spec, spec)
-                lp.width = 0
-                v.layoutParams = lp
-                v.findViewById<TextView>(R.id.file_name).text = name
-                v.findViewById<TextView>(R.id.file_subtitle).text = "Stored locally"
-                val icon = v.findViewById<ImageView>(R.id.file_icon)
-                icon.setImageResource(R.drawable.ic_win11_folder)
-                icon.setColorFilter(color, PorterDuff.Mode.SRC_IN)
-                quickGrid.addView(v)
+                val lp = GridLayout.LayoutParams(spec, spec).apply { width = 0 }
+                item.layoutParams = lp
+                item.findViewById<TextView>(R.id.file_name).text = name
+                item.findViewById<TextView>(R.id.file_subtitle).text = "Stored locally"
+                item.findViewById<ImageView>(R.id.file_icon).apply {
+                    setImageResource(iconRes); setColorFilter(color, PorterDuff.Mode.SRC_IN)
+                }
+                quickGrid.addView(item)
             }
 
-            val recentList = explorerView.findViewById<LinearLayout>(R.id.recent_files_list)
+            val recentList = v.findViewById<LinearLayout>(R.id.recent_files_list)
             val recents = fileIndexer.getRecentFiles(8)
             if (recents.isEmpty()) {
-                val empty = TextView(this)
-                empty.text = "After you've opened some files, we'll show the most recent ones here."
-                empty.setTextColor(0x88000000.toInt())
-                empty.textSize = 12f
-                recentList.addView(empty)
+                recentList.addView(TextView(this).apply {
+                    text = "No recent files. Open documents, images, or spreadsheets and they'll appear here."
+                    setTextColor(0x88000000.toInt()); textSize = 12f; setPadding(8, 8, 8, 8)
+                })
             } else {
-                for (file in recents) {
-                    val v = layoutInflater.inflate(R.layout.item_recommended_file, recentList, false)
-                    v.findViewById<TextView>(R.id.file_name).text = file.name
-                    v.findViewById<TextView>(R.id.file_subtitle).text = "${file.extension.uppercase()} · Documents"
-                    v.findViewById<ImageView>(R.id.file_icon).setImageResource(android.R.drawable.ic_menu_edit)
-                    recentList.addView(v)
+                recents.forEach { file ->
+                    val item = layoutInflater.inflate(R.layout.item_recommended_file, recentList, false)
+                    item.findViewById<TextView>(R.id.file_name).text = file.name
+                    item.findViewById<TextView>(R.id.file_subtitle).text = "${file.extension.uppercase()} · Recent"
+                    item.findViewById<ImageView>(R.id.file_icon).setImageResource(android.R.drawable.ic_menu_edit)
+                    recentList.addView(item)
                 }
             }
-            explorerView.findViewById<TextView>(R.id.explorer_item_count)?.text = "${folders.size} items"
+            v.findViewById<TextView>(R.id.explorer_item_count)?.text = "6 folders"
+        }
+    }
+
+    private fun openBrowser() {
+        openFloatingWindow("Browser", R.drawable.ic_win11_edge) { container ->
+            val wv = WebView(this)
+            wv.settings.javaScriptEnabled = true
+            wv.settings.domStorageEnabled = true
+            wv.settings.setSupportZoom(true)
+            wv.settings.builtInZoomControls = true
+            wv.settings.displayZoomControls = false
+            wv.loadUrl("https://www.google.com")
+            container.addView(wv)
         }
     }
 
     private fun openNotepad() {
         openFloatingWindow("Notepad", android.R.drawable.ic_menu_edit) { container ->
             container.setBackgroundColor(Color.WHITE)
-            val editText = EditText(this)
-            editText.layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            editText.hint = "Start typing..."
-            editText.setTextColor(Color.BLACK)
-            editText.setHintTextColor(0x88000000.toInt())
-            editText.setBackgroundColor(Color.TRANSPARENT)
-            editText.gravity = android.view.Gravity.TOP
-            editText.setPadding(24, 24, 24, 24)
-            editText.textSize = 14f
-            container.addView(editText)
+            val et = EditText(this).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                hint = "Start typing…"; setTextColor(Color.BLACK)
+                setHintTextColor(0x88000000.toInt()); setBackgroundColor(Color.TRANSPARENT)
+                gravity = android.view.Gravity.TOP; setPadding(20, 20, 20, 20); textSize = 14f
+                typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
+            }
+            container.addView(et)
         }
     }
 
-    private fun setupControlCenter() {
-        val panel = binding.appBarMain.contentMain.controlCenterPanel ?: return
-        val root = panel.root
-
-        panel.brightnessSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-        panel.volumeSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        // Clear all button
-        root.findViewById<View>(R.id.btn_clear_all)?.setOnClickListener {
-            liveNotifications.clear()
-            updateNotificationPanel()
-        }
-
-        // More settings link
-        root.findViewById<View>(R.id.btn_more_settings)?.setOnClickListener {
-            toggleControlCenter(false)
-            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
-        }
-
-        // Resize handle
-        setupControlCenterResize(root)
-
-        // Initial notification state
-        updateNotificationPanel()
+    private fun openFloatingWindow(title: String, iconRes: Int, contentInit: (FrameLayout) -> Unit) {
+        windowManager.openWindow(title, iconRes, contentInit)
     }
 
-    private fun openBrowser() {
-        openFloatingWindow("Web Browser", R.drawable.ic_camera_black_24dp) { container ->
-            val webView = WebView(this)
-            webView.settings.javaScriptEnabled = true
-            webView.loadUrl("https://www.google.com")
-            container.addView(webView)
-        }
-    }
-
-    private fun openFloatingWindow(title: String, iconRes: Int, contentInitializer: (FrameLayout) -> Unit) {
-        windowManager.openWindow(title, iconRes, contentInitializer)
-    }
-
+    // ── Refresh (from settings) ───────────────────────────────────────
     fun refreshIcons() {
         desktopManager.setIcons(allInstalledApps.take(6))
-        val startMenuPanel = binding.appBarMain.contentMain.startMenuPanel
-        if (startMenuPanel?.root?.visibility == View.VISIBLE) {
-            populatePinnedApps(startMenuPanel)
-        }
+        val sm = binding.appBarMain.contentMain.startMenuPanel
+        if (sm?.root?.visibility == View.VISIBLE) populatePinnedApps(sm)
         taskbarManager.refreshIcons(iconPackManager)
     }
 
-    /** Called from SettingsFragment — apply theme changes live */
-    fun applyTheme(dark: Boolean, redAccent: Boolean) {
-        ThemeManager.setDark(this, dark)
-        ThemeManager.setRedAccent(this, redAccent)
-        applyThemeToControlCenter()
-        // Tint taskbar accent
-        val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root
-        val accent = ThemeManager.accent(this)
-        taskbarRoot?.findViewById<TextView>(R.id.notification_count)
-            ?.backgroundTintList = ColorStateList.valueOf(accent)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        widgetHostManager.stopListening()
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(notifReceiver)
-    }
-
-    private fun setupStartMenuActions(startMenuBinding: LayoutStartMenuBinding) {
-        val start = startMenuBinding
+    // ── Start Menu internals ──────────────────────────────────────────
+    private fun setupStartMenuActions(start: LayoutStartMenuBinding) {
         populateSidebar(start)
         populateRecommended(start)
         populatePinnedApps(start)
         populateQuickAccess(start)
 
         start.startSearchInput.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
                 filterStartMenuContent(s.toString())
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
@@ -811,105 +849,46 @@ class MainActivity : AppCompatActivity() {
 
         start.btnPower.setOnClickListener { showPowerMenu(it) }
         start.btnAllAppsDropdown.setOnClickListener { showAllApps(true) }
-
         start.btnSettingsQuick.setOnClickListener {
             toggleStartMenu(false)
             findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
         }
-
         start.btnLockQuick.setOnClickListener {
             val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-            try {
-                dpm.lockNow()
-            } catch (e: Exception) {
-                Snackbar.make(binding.root, "Device Admin required for Lock", Snackbar.LENGTH_LONG)
-                    .setAction("Settings") { startActivity(Intent(Settings.ACTION_SETTINGS)) }.show()
+            try { dpm.lockNow() } catch (e: Exception) {
+                Snackbar.make(binding.root, "Need Device Admin for Lock", Snackbar.LENGTH_LONG).show()
             }
         }
-
         start.btnMoonQuick.setOnClickListener {
-            Snackbar.make(binding.root, "Entering Sleep Mode...", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(binding.root, "Sleep mode", Snackbar.LENGTH_SHORT).show()
         }
     }
 
     private fun filterStartMenuContent(query: String) {
-        val startMenuPanel = binding.appBarMain.contentMain.startMenuPanel ?: return
-        val grid = startMenuPanel.pinnedAppsGrid
-        if (query.isEmpty()) {
-            populatePinnedApps(startMenuPanel)
-            return
-        }
-        grid.removeAllViews()
-        grid.columnCount = 4
-        val filtered = allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }.take(12)
-        for (app in filtered) {
-            val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
-            val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            val lp = GridLayout.LayoutParams(spec, spec)
-            lp.width = 0
-            itemView.layoutParams = lp
-            itemView.findViewById<TextView>(R.id.icon_label).text = app.label
-            itemView.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
-            itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
-            itemView.setOnLongClickListener { showAppContextMenu(itemView, app); true }
-            grid.addView(itemView)
+        val sm   = binding.appBarMain.contentMain.startMenuPanel ?: return
+        val grid = sm.pinnedAppsGrid
+        if (query.isEmpty()) { populatePinnedApps(sm); return }
+        grid.removeAllViews(); grid.columnCount = 4
+        allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }.take(12).forEach { app ->
+            addAppToGrid(grid, app)
         }
     }
 
     private fun showPowerMenu(view: View) {
         val popup = PopupMenu(this, view)
-        popup.menu.add("Sleep")
-        popup.menu.add("Shut down")
-        popup.menu.add("Restart")
-        popup.setOnMenuItemClickListener { item ->
-            Snackbar.make(binding.root, "${item.title} initiated...", Snackbar.LENGTH_SHORT).show()
-            true
-        }
-        popup.show()
-    }
-
-    /** Long-press context menu for an app icon (in start menu or app drawer) */
-    private fun showAppContextMenu(anchor: View, app: AppModel) {
-        val popup = PopupMenu(this, anchor)
-        popup.menu.add("Open")
-        popup.menu.add("Add to Home Screen")
-        popup.menu.add("App info")
-        popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "Open" -> { launchApp(app.packageName); toggleStartMenu(false) }
-                "Add to Home Screen" -> {
-                    desktopManager.addSingleIcon(app)
-                    toggleStartMenu(false)
-                    Snackbar.make(binding.root, "${app.label} added to desktop", Snackbar.LENGTH_SHORT).show()
-                }
-                "App info" -> {
-                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:${app.packageName}")
-                    })
-                }
-            }
-            true
+        popup.menu.add("Sleep"); popup.menu.add("Shut down"); popup.menu.add("Restart")
+        popup.setOnMenuItemClickListener {
+            Snackbar.make(binding.root, "${it.title} initiated…", Snackbar.LENGTH_SHORT).show(); true
         }
         popup.show()
     }
 
     private fun showAllApps(show: Boolean) {
         val start = binding.appBarMain.contentMain.startMenuPanel ?: return
+        start.pinnedAppsGrid.removeAllViews()
+        start.pinnedAppsGrid.columnCount = 4
         if (show) {
-            start.pinnedAppsGrid.removeAllViews()
-            start.pinnedAppsGrid.columnCount = 4
-            for (app in allInstalledApps) {
-                val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, start.pinnedAppsGrid, false)
-                val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                val lp = GridLayout.LayoutParams(spec, spec)
-                lp.width = 0
-                itemView.layoutParams = lp
-                itemView.findViewById<TextView>(R.id.icon_label).text = app.label
-                itemView.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
-                itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
-                itemView.setOnLongClickListener { showAppContextMenu(itemView, app); true }
-                start.pinnedAppsGrid.addView(itemView)
-            }
+            allInstalledApps.forEach { app -> addAppToGrid(start.pinnedAppsGrid, app) }
             start.btnAllAppsDropdown.text = "Pinned  ‹"
             start.btnAllAppsDropdown.setOnClickListener { showAllApps(false) }
         } else {
@@ -919,111 +898,93 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun populateSidebar(binding: LayoutStartMenuBinding) {
-        val container = binding.sidebarContainer
+    private fun populatePinnedApps(start: LayoutStartMenuBinding) {
+        val grid = start.pinnedAppsGrid
+        grid.removeAllViews(); grid.columnCount = 4
+        val priority = listOf("File Explorer","Microsoft Edge","Notepad","Photos","Settings","Calculator","Camera","Maps","Clock","YouTube","Gmail","Chrome")
+        allInstalledApps.filter { it.label in priority }
+            .plus(allInstalledApps.filter { it.label !in priority })
+            .distinctBy { it.packageName }.take(12)
+            .forEach { app -> addAppToGrid(grid, app) }
+        start.btnAllAppsDropdown.text = "All apps  ›"
+        start.btnAllAppsDropdown.setOnClickListener { showAllApps(true) }
+    }
+
+    private fun addAppToGrid(grid: GridLayout, app: AppModel) {
+        val v = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
+        val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+        v.layoutParams = GridLayout.LayoutParams(spec, spec).apply { width = 0 }
+        v.findViewById<TextView>(R.id.icon_label).text = app.label
+        v.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
+        v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
+        v.setOnLongClickListener { showAppContextMenu(v, app); true }
+        grid.addView(v)
+    }
+
+    private fun populateSidebar(start: LayoutStartMenuBinding) {
+        val container = start.sidebarContainer
         container.removeAllViews()
-        val categories = listOf(
+        listOf(
             Pair("All", android.R.drawable.ic_dialog_dialer),
             Pair("Pinned", android.R.drawable.ic_menu_myplaces),
             Pair("Productivity", android.R.drawable.ic_menu_agenda),
             Pair("Development", android.R.drawable.ic_menu_edit),
             Pair("Media", android.R.drawable.ic_menu_gallery),
-            Pair("Utilities", android.R.drawable.ic_menu_manage),
-            Pair("System", android.R.drawable.ic_menu_preferences),
-            Pair("Folders", android.R.drawable.ic_menu_directions)
-        )
-        for (cat in categories) {
-            val itemView = layoutInflater.inflate(R.layout.item_sidebar_category, container, false)
-            val label = itemView.findViewById<TextView>(R.id.sidebar_item_label)
-            val icon = itemView.findViewById<ImageView>(R.id.sidebar_item_icon)
-            label.text = cat.first
-            icon.setImageResource(cat.second)
-            if (cat.first == "All") {
-                itemView.background = ResourcesCompat.getDrawable(resources, R.drawable.sidebar_item_active, null)
-                label.setTextColor(ResourcesCompat.getColor(resources, R.color.white, null))
-                icon.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null))
+            Pair("System", android.R.drawable.ic_menu_preferences)
+        ).forEach { (cat, icon) ->
+            val v = layoutInflater.inflate(R.layout.item_sidebar_category, container, false)
+            v.findViewById<TextView>(R.id.sidebar_item_label).text = cat
+            v.findViewById<ImageView>(R.id.sidebar_item_icon).setImageResource(icon)
+            if (cat == "All") {
+                v.background = ResourcesCompat.getDrawable(resources, R.drawable.sidebar_item_active, null)
+                v.findViewById<TextView>(R.id.sidebar_item_label).setTextColor(Color.WHITE)
             }
-            itemView.setOnClickListener {
-                Snackbar.make(binding.root, "Category: ${cat.first}", Snackbar.LENGTH_SHORT).show()
+            v.setOnClickListener {
+                Snackbar.make(binding.root, "Category: $cat", Snackbar.LENGTH_SHORT).show()
             }
-            container.addView(itemView)
+            container.addView(v)
         }
-        val footer = layoutInflater.inflate(R.layout.layout_sidebar_footer, container, false)
-        container.addView(footer)
+        container.addView(layoutInflater.inflate(R.layout.layout_sidebar_footer, container, false))
     }
 
-    private fun populateRecommended(binding: LayoutStartMenuBinding) {
-        val container = binding.recommendedContainer
+    private fun populateRecommended(start: LayoutStartMenuBinding) {
+        val container = start.recommendedContainer
         container.removeAllViews()
-        val recentFiles = fileIndexer.getRecentFiles()
-        if (recentFiles.isEmpty()) {
-            val topApps = allInstalledApps.take(4)
-            for (app in topApps) {
-                val itemView = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
-                itemView.findViewById<TextView>(R.id.file_name).text = app.label
-                itemView.findViewById<TextView>(R.id.file_subtitle).text = "Recently installed"
-                itemView.findViewById<ImageView>(R.id.file_icon).setImageDrawable(app.bestIcon())
-                itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
-                container.addView(itemView)
+        val recents = fileIndexer.getRecentFiles()
+        if (recents.isEmpty()) {
+            allInstalledApps.take(4).forEach { app ->
+                val v = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
+                v.findViewById<TextView>(R.id.file_name).text = app.label
+                v.findViewById<TextView>(R.id.file_subtitle).text = "Recently used"
+                v.findViewById<ImageView>(R.id.file_icon).setImageDrawable(app.bestIcon())
+                v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
+                container.addView(v)
             }
         } else {
-            for (file in recentFiles) {
-                val itemView = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
-                itemView.findViewById<TextView>(R.id.file_name).text = file.name
-                itemView.findViewById<TextView>(R.id.file_subtitle).text = "Type: ${file.extension}"
-                itemView.findViewById<ImageView>(R.id.file_icon).setImageResource(R.drawable.ic_gallery_black_24dp)
-                itemView.findViewById<ImageView>(R.id.file_icon).setColorFilter(
-                    ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN
-                )
-                itemView.setOnClickListener {
-                    Snackbar.make(binding.root, "Opening ${file.name}", Snackbar.LENGTH_SHORT).show()
-                    toggleStartMenu(false)
-                }
-                container.addView(itemView)
+            recents.forEach { file ->
+                val v = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
+                v.findViewById<TextView>(R.id.file_name).text = file.name
+                v.findViewById<TextView>(R.id.file_subtitle).text = file.extension.uppercase()
+                v.setOnClickListener { toggleStartMenu(false) }
+                container.addView(v)
             }
         }
     }
 
-    private fun populatePinnedApps(binding: LayoutStartMenuBinding) {
-        val grid = binding.pinnedAppsGrid
-        grid.removeAllViews()
-        grid.columnCount = 4
-        val targetApps = listOf("File Explorer", "Microsoft Edge", "Notepad", "Photos", "Settings", "Calculator", "Camera", "Maps", "Clock", "YouTube", "Gmail", "Chrome")
-        val pinned = allInstalledApps.filter { it.label in targetApps }
-            .plus(allInstalledApps.filter { it.label !in targetApps })
-            .distinctBy { it.packageName }
-            .take(12)
-
-        for (app in pinned) {
-            val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
-            val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            val lp = GridLayout.LayoutParams(spec, spec)
-            lp.width = 0
-            itemView.layoutParams = lp
-            itemView.findViewById<TextView>(R.id.icon_label).text = app.label
-            itemView.findViewById<ImageView>(R.id.icon_image).setImageDrawable(app.bestIcon())
-            itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
-            itemView.setOnLongClickListener { showAppContextMenu(itemView, app); true }
-            grid.addView(itemView)
-        }
-    }
-
-    private fun populateQuickAccess(binding: LayoutStartMenuBinding) {
-        val container = binding.quickAccessContainer
+    private fun populateQuickAccess(start: LayoutStartMenuBinding) {
+        val container = start.quickAccessContainer
         container.removeAllViews()
-        val folderItems = listOf("Downloads", "Documents", "Pictures", "Videos")
-        for (folder in folderItems) {
-            val itemView = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
-            val params = itemView.layoutParams
-            params.width = (140 * resources.displayMetrics.density).toInt()
-            itemView.layoutParams = params
-            itemView.findViewById<TextView>(R.id.file_name).text = folder
-            itemView.findViewById<TextView>(R.id.file_subtitle).visibility = View.GONE
-            val iconImg = itemView.findViewById<ImageView>(R.id.file_icon)
-            iconImg.setImageResource(R.drawable.ic_gallery_black_24dp)
-            iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
-            itemView.setOnClickListener { Snackbar.make(binding.root, "Opening $folder...", Snackbar.LENGTH_SHORT).show() }
-            container.addView(itemView)
+        listOf("Downloads", "Documents", "Pictures", "Videos").forEach { folder ->
+            val v = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
+            v.layoutParams = v.layoutParams.also { it.width = (132 * resources.displayMetrics.density).toInt() }
+            v.findViewById<TextView>(R.id.file_name).text = folder
+            v.findViewById<TextView>(R.id.file_subtitle).visibility = View.GONE
+            v.findViewById<ImageView>(R.id.file_icon).apply {
+                setImageResource(R.drawable.ic_win11_folder)
+                setColorFilter(ThemeManager.accent(this@MainActivity), PorterDuff.Mode.SRC_IN)
+            }
+            v.setOnClickListener { Snackbar.make(binding.root, "Opening $folder…", Snackbar.LENGTH_SHORT).show() }
+            container.addView(v)
         }
     }
 
@@ -1031,6 +992,14 @@ class MainActivity : AppCompatActivity() {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         if (intent != null) startActivity(intent)
         else Snackbar.make(binding.root, "App not found", Snackbar.LENGTH_SHORT).show()
+    }
+
+    // ── System ────────────────────────────────────────────────────────
+    override fun onDestroy() {
+        super.onDestroy()
+        widgetHostManager.stopListening()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(notifReceiver)
+        handler.removeCallbacksAndMessages(null)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

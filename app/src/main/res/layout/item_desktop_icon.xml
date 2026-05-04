@@ -1,51 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Desktop icon: draggable, long-press to delete, no tinting -->
+<!-- Desktop icon: glass frosted card, crisp shadow, clean label pill -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="72dp"
-    android:layout_height="88dp"
-    android:clickable="true"
-    android:focusable="true">
+    android:layout_width="80dp"
+    android:layout_height="96dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
+    <!-- Tap/press ripple -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?attr/selectableItemBackground"
-        android:gravity="center"
+        android:background="@drawable/desktop_icon_selector"
+        android:gravity="center_horizontal"
         android:orientation="vertical"
         android:padding="6dp">
 
-        <ImageView
-            android:id="@+id/icon_image"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_launcher_foreground" />
+        <!-- Glass icon container -->
+        <FrameLayout
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:background="@drawable/icon_bg_glass"
+            android:elevation="3dp"
+            android:clipChildren="false">
 
+            <ImageView
+                android:id="@+id/icon_image"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_gravity="center"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_launcher_foreground" />
+        </FrameLayout>
+
+        <!-- Label pill -->
         <TextView
             android:id="@+id/icon_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="5dp"
+            android:background="@drawable/icon_label_pill"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp"
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="2"
             android:text="Label"
             android:textColor="#FFFFFFFF"
             android:textSize="10sp"
-            android:shadowColor="#CC000000"
+            android:fontFamily="sans-serif-medium"
+            android:shadowColor="#DD000000"
             android:shadowDx="0"
             android:shadowDy="1"
-            android:shadowRadius="3" />
+            android:shadowRadius="4" />
     </LinearLayout>
 
-    <!-- Delete badge (shown on long press / edit mode) -->
-    <View
-        android:id="@+id/delete_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#44FF0000"
-        android:visibility="gone" />
-
+    <!-- Delete badge -->
     <TextView
         android:id="@+id/btn_delete_icon"
         android:layout_width="20dp"
@@ -57,8 +68,10 @@
         android:text="✕"
         android:textColor="@color/white"
         android:textSize="9sp"
+        android:fontFamily="sans-serif-medium"
         android:visibility="gone"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:elevation="6dp" />
 
 </FrameLayout>
