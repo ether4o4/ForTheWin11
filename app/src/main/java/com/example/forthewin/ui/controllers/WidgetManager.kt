@@ -1,9 +1,11 @@
 package com.example.forthewin.ui.controllers
 
+import android.appwidget.AppWidgetHostView
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.example.forthewin.R
 
@@ -24,12 +26,31 @@ class WidgetManager(
         val contentSlot = wrapper.findViewById<FrameLayout>(R.id.widget_content_slot)
         val dismissBtn = wrapper.findViewById<View>(R.id.btn_widget_dismiss)
 
-        // Set default size for widget
         val density = context.resources.displayMetrics.density
-        val defaultW = (280 * density).toInt()
-        val defaultH = (200 * density).toInt()
-        widgetView.layoutParams = FrameLayout.LayoutParams(defaultW, defaultH)
+
+        // Use the widget's own size if it's an AppWidgetHostView
+        val widgetW: Int
+        val widgetH: Int
+        if (widgetView is AppWidgetHostView) {
+            val info = widgetView.appWidgetInfo
+            val minW = info?.minWidth ?: 0
+            val minH = info?.minHeight ?: 0
+            widgetW = if (minW > 0) minW else (280 * density).toInt()
+            widgetH = if (minH > 0) minH else (200 * density).toInt()
+        } else {
+            widgetW = (280 * density).toInt()
+            widgetH = (200 * density).toInt()
+        }
+
+        // Remove from any previous parent
+        (widgetView.parent as? ViewGroup)?.removeView(widgetView)
+
+        // Set the widget view size and add it
+        widgetView.layoutParams = FrameLayout.LayoutParams(widgetW, widgetH)
         contentSlot.addView(widgetView)
+
+        // Size the content slot to match
+        contentSlot.layoutParams = FrameLayout.LayoutParams(widgetW, widgetH)
 
         dismissBtn.setOnClickListener { removeWidget(wrapper) }
 

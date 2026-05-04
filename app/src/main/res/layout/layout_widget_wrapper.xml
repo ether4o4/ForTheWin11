@@ -1,37 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Draggable widget wrapper with dismiss button -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Draggable widget wrapper with glass background and dismiss button -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp">
+    android:orientation="vertical"
+    android:elevation="8dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Widget content -->
+    <!-- Drag handle bar at top -->
+    <FrameLayout
+        android:id="@+id/widget_drag_handle"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:background="@drawable/widget_header_bg"
+        android:clickable="true"
+        android:focusable="true">
+
+        <!-- Grip indicator -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:background="@drawable/widget_grip" />
+
+        <!-- Dismiss button (X top-right) -->
+        <TextView
+            android:id="@+id/btn_widget_dismiss"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center_vertical|end"
+            android:layout_marginEnd="4dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="#88000000"
+            android:textSize="11sp"
+            android:clickable="true"
+            android:focusable="true" />
+    </FrameLayout>
+
+    <!-- Widget content slot -->
     <FrameLayout
         android:id="@+id/widget_content_slot"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/widget_body_bg"
+        android:clipChildren="false"
+        android:clipToPadding="false" />
 
-    <!-- Drag handle (invisible strip at top of widget) -->
-    <View
-        android:id="@+id/widget_drag_handle"
-        android:layout_width="match_parent"
-        android:layout_height="32dp"
-        android:background="@android:color/transparent" />
-
-    <!-- Dismiss button (X top-right) -->
-    <TextView
-        android:id="@+id/btn_widget_dismiss"
-        android:layout_width="26dp"
-        android:layout_height="26dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="4dp"
-        android:background="@drawable/glass_panel_obsidian"
-        android:gravity="center"
-        android:text="✕"
-        android:textColor="@color/white"
-        android:textSize="11sp"
-        android:clickable="true"
-        android:focusable="true"
-        android:elevation="8dp" />
-
-</FrameLayout>
+</LinearLayout>

@@ -85,14 +85,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ── Widget picker ─────────────────────────────────────────────────
+    // ── Widget picker — 2-step flow: pick → configure (optional) → create ──
+    private val widgetConfigureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+            ?: widgetHostManager.pendingWidgetId
+        if (result.resultCode == RESULT_OK && appWidgetId != -1) {
+            finalizeWidget(appWidgetId)
+        } else if (appWidgetId != -1) {
+            widgetHostManager.deleteWidgetId(appWidgetId)
+        }
+    }
+
     private val widgetPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
-            if (appWidgetId != -1) {
-                val hostView = widgetHostManager.createWidgetView(appWidgetId)
-                if (hostView != null) widgetManager.addWidget(hostView)
+        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+            ?: widgetHostManager.pendingWidgetId
+        if (result.resultCode == RESULT_OK && appWidgetId != -1) {
+            // Check if this widget needs a configure step
+            val needsConfigure = widgetHostManager.launchConfigureIfNeeded(appWidgetId, widgetConfigureLauncher)
+            if (!needsConfigure) {
+                finalizeWidget(appWidgetId)
             }
+            // else: widgetConfigureLauncher will handle it
+        } else if (appWidgetId != -1) {
+            widgetHostManager.deleteWidgetId(appWidgetId)
+        }
+    }
+
+    private fun finalizeWidget(appWidgetId: Int) {
+        val hostView = widgetHostManager.createWidgetView(appWidgetId)
+        if (hostView != null) {
+            widgetManager.addWidget(hostView)
+        } else {
+            widgetHostManager.deleteWidgetId(appWidgetId)
+            Snackbar.make(binding.root, "Widget failed to load", Snackbar.LENGTH_SHORT).show()
         }
     }
 
