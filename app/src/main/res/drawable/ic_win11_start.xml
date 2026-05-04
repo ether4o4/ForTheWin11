@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Windows 11 logo: four colored squares in a 2x2 grid -->
+    <path android:fillColor="#FF0078D4" android:pathData="M3,3 H11 V11 H3 Z"/>
+    <path android:fillColor="#FFE74856" android:pathData="M13,3 H21 V11 H13 Z"/>
+    <path android:fillColor="#FF00B294" android:pathData="M3,13 H11 V21 H3 Z"/>
+    <path android:fillColor="#FFFFB900" android:pathData="M13,13 H21 V21 H13 Z"/>
+</vector>

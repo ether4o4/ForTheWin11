@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.content.res.ResourcesCompat
+import com.example.forthewin.IconPackManager
 import com.example.forthewin.R
 import com.example.forthewin.databinding.LayoutCustomTaskbarBinding
 
@@ -48,5 +49,12 @@ class TaskbarManager(
             binding.taskbarItemsContainer.removeView(icon)
             taskbarIcons.remove(window)
         }
+    }
+
+    /** Re-apply icon pack icons to all active taskbar window icons */
+    fun refreshIcons(iconPackManager: IconPackManager) {
+        // Taskbar static icons (start, search, etc.) are vector drawables — no refresh needed
+        // Dynamic window icons are set by iconRes, not package — nothing to remap here
+        // This hook is available for future per-package taskbar pinning
     }
 }

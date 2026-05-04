@@ -58,6 +58,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var windowManager: WindowManagerController
     private lateinit var taskbarManager: TaskbarManager
     private lateinit var widgetHostManager: WidgetHostManager
+    private lateinit var iconPackManager: IconPackManager
+
+    private fun AppModel.bestIcon() = resolvedIcon(iconPackManager)
 
     private val widgetPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -78,6 +81,7 @@ class MainActivity : AppCompatActivity() {
 
         statsManager = SystemStatsManager(this)
         fileIndexer = FileIndexer(this)
+        iconPackManager = (application as LauncherApplication).iconPackManager
         
         setupManagers()
         checkPermissions()
@@ -249,6 +253,7 @@ class MainActivity : AppCompatActivity() {
             val app = AppModel(
                 ri.loadLabel(packageManager).toString(),
                 ri.activityInfo.packageName,
+                ri.activityInfo.name,
                 ri.activityInfo.loadIcon(packageManager)
             )
             allInstalledApps.add(app)
@@ -448,6 +453,16 @@ class MainActivity : AppCompatActivity() {
         windowManager.openWindow(title, iconRes, contentInitializer)
     }
 
+    /** Called from SettingsFragment after icon pack change — refreshes all icon surfaces */
+    fun refreshIcons() {
+        populateDesktopIcons()
+        val startMenuPanel = binding.appBarMain.contentMain.startMenuPanel
+        if (startMenuPanel?.root?.visibility == View.VISIBLE) {
+            populatePinnedApps(startMenuPanel)
+        }
+        taskbarManager.refreshIcons(iconPackManager)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         widgetHostManager.stopListening()
@@ -507,8 +522,7 @@ class MainActivity : AppCompatActivity() {
             val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
             itemView.findViewById<TextView>(R.id.icon_label).text = app.label
             val iconImg = itemView.findViewById<ImageView>(R.id.icon_image)
-            iconImg.setImageDrawable(app.icon)
-            iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
+            iconImg.setImageDrawable(app.bestIcon())
             itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
             grid.addView(itemView)
         }
@@ -534,8 +548,7 @@ class MainActivity : AppCompatActivity() {
                 val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, start.pinnedAppsGrid, false)
                 itemView.findViewById<TextView>(R.id.icon_label).text = app.label
                 val iconImg = itemView.findViewById<ImageView>(R.id.icon_image)
-                iconImg.setImageDrawable(app.icon)
-                iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
+                iconImg.setImageDrawable(app.bestIcon())
                 itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
                 start.pinnedAppsGrid.addView(itemView)
             }
@@ -598,7 +611,7 @@ class MainActivity : AppCompatActivity() {
                 val itemView = layoutInflater.inflate(R.layout.item_recommended_file, container, false)
                 itemView.findViewById<TextView>(R.id.file_name).text = app.label
                 itemView.findViewById<TextView>(R.id.file_subtitle).text = "Recently installed"
-                itemView.findViewById<ImageView>(R.id.file_icon).setImageDrawable(app.icon)
+                itemView.findViewById<ImageView>(R.id.file_icon).setImageDrawable(app.bestIcon())
                 itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
                 container.addView(itemView)
             }
@@ -628,8 +641,7 @@ class MainActivity : AppCompatActivity() {
             val itemView = layoutInflater.inflate(R.layout.item_desktop_icon, grid, false)
             itemView.findViewById<TextView>(R.id.icon_label).text = app.label
             val iconImg = itemView.findViewById<ImageView>(R.id.icon_image)
-            iconImg.setImageDrawable(app.icon)
-            iconImg.setColorFilter(ResourcesCompat.getColor(resources, R.color.vista_red_accent, null), PorterDuff.Mode.SRC_IN)
+            iconImg.setImageDrawable(app.bestIcon())
             itemView.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
             grid.addView(itemView)
         }

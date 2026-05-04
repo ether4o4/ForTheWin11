@@ -1,32 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
 
-    <!-- Obsidian Red Design System -->
-    <color name="obsidian_base">#FF050505</color>
-    <color name="obsidian_glass">#D90A0A0A</color> <!-- 85% Obsidian -->
-    <color name="obsidian_glass_light">#40FFFFFF</color> <!-- 25% White Overlay -->
+    <!-- Win11 Accent -->
+    <color name="win11_accent">#FF0078D4</color>
+    <color name="win11_accent_dim">#330078D4</color>
+    <color name="win11_accent_glow">#1A0078D4</color>
 
-    <color name="vista_red_accent">#FFFF3B3B</color>
-    <color name="vista_red_soft">#4DFF3B3B</color> <!-- 30% Red -->
-    <color name="vista_red_glow">#26FF3B3B</color> <!-- 15% Red Glow -->
+    <!-- Glass / Mica surface system -->
+    <color name="surface_base">#FF0A0A0C</color>
+    <color name="surface_glass">#E6101014</color>     <!-- 90% dark -->
+    <color name="surface_card">#CC141418</color>      <!-- 80% dark card -->
+    <color name="surface_hover">#26FFFFFF</color>     <!-- 15% white hover -->
+    <color name="surface_pressed">#40FFFFFF</color>   <!-- 25% white pressed -->
 
+    <!-- Borders -->
+    <color name="border_glass">#1AFFFFFF</color>
+    <color name="border_accent">#330078D4</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#99FFFFFF</color>
+    <color name="text_tertiary">#66FFFFFF</color>
+
+    <!-- System tray icons -->
+    <color name="tray_icon">#CCFFFFFF</color>
+
+    <!-- Compat / unused kept for build -->
+    <color name="vista_red_accent">#FF0078D4</color>
+    <color name="vista_red_soft">#330078D4</color>
+    <color name="vista_red_glow">#1A0078D4</color>
+    <color name="obsidian_base">#FF0A0A0C</color>
+    <color name="obsidian_glass">#E6101014</color>
+    <color name="obsidian_glass_light">#26FFFFFF</color>
     <color name="text_main">#FFFFFFFF</color>
     <color name="text_dim">#99FFFFFF</color>
     <color name="text_dark">#FF1A1A1A</color>
-
-    <!-- Design Tokens -->
-    <color name="sidebar_active_bg">#33FF3B3B</color>
-    <color name="border_glass">#1AFFFFFF</color>
-    <color name="border_red">#4DFF3B3B</color>
-
-    <!-- Legacy Compatibility -->
+    <color name="sidebar_active_bg">#330078D4</color>
+    <color name="border_red">#330078D4</color>
     <color name="switch_day_bg">#3D7EAE</color>
     <color name="switch_night_bg">#1D1F2C</color>
     <color name="switch_sun">#ECCA2F</color>
@@ -35,18 +47,23 @@
     <color name="switch_clouds">#F3FDFF</color>
     <color name="switch_back_clouds">#AACADF</color>
     <color name="switch_stars">#FFFFFF</color>
-    <color name="card_gradient_start">#FFFC466B</color>
-    <color name="card_gradient_end">#FF3F5FB1</color>
-    <color name="neu_bg">#FFF0F2F5</color>
-    <color name="neu_light">#FFFFFFFF</color>
-    <color name="neu_shadow">#D1D9E6</color>
-    <color name="neu_red_start">#FFFF4D4D</color>
-    <color name="neu_red_end">#FFB30000</color>
-    <color name="neu_accent_red">#FFD60000</color>
-    <color name="glass_red_bg">#4DFF4D4D</color>
-    <color name="glass_white_bg">#4DFFFFFF</color>
-    <color name="glass_red_stroke">#80FF4D4D</color>
-    <color name="glass_white_stroke">#B3FFFFFF</color>
+    <color name="card_gradient_start">#FF0078D4</color>
+    <color name="card_gradient_end">#FF005A9E</color>
+    <color name="neu_bg">#FF0A0A0C</color>
+    <color name="neu_light">#26FFFFFF</color>
+    <color name="neu_shadow">#80000000</color>
+    <color name="neu_red_start">#FF0078D4</color>
+    <color name="neu_red_end">#FF005A9E</color>
+    <color name="neu_accent_red">#FF0078D4</color>
+    <color name="glass_red_bg">#330078D4</color>
+    <color name="glass_white_bg">#26FFFFFF</color>
+    <color name="glass_red_stroke">#660078D4</color>
+    <color name="glass_white_stroke">#66FFFFFF</color>
     <color name="electric_blue">#FF00D4FF</color>
     <color name="soft_purple">#FFA855F7</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF0078D4</color>
+    <color name="purple_700">#FF005A9E</color>
+    <color name="teal_200">#FF00D4FF</color>
+    <color name="teal_700">#FF0099BB</color>
 </resources>
