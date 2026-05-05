@@ -1,0 +1,25 @@
+{
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "forthewin-placeholder",
+    "storage_bucket": "forthewin-placeholder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "com.example.forthewin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUMMY_KEY_PLACEHOLDER_000000000"
+        }
+      ],
+      "services": {}
+    }
+  ],
+  "configuration_version": "1"
+}
