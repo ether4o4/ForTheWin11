@@ -1,71 +1,28 @@
-# ForTheWin11 — FINAL BUILD PASS
+# ForTheWin11 — Task Tracker
 
-## WHAT EXISTS (solid)
-- MainActivity: window manager, taskbar, start menu, desktop icons, widget host, notification receiver, theme manager
-- DesktopManager: drag/drop, wiggle-cancel fixed, addSingleIcon, setEditMode
-- NotificationService: live broadcast via LocalBroadcastManager
-- ThemeManager: light/dark + blue/red accent
-- WindowManagerController: draggable floating windows, min/max/close
-- WidgetManager + WidgetHostManager: draggable widget overlays
-- TaskbarManager: dynamic window icons
-- Layouts: taskbar, start menu, control center, file explorer, floating window, widgets
+## Target: Match WinX Red Theme exactly (reference: /tmp/target_look.jpg)
 
-## WHAT NEEDS REBUILDING / ADDING (this pass)
+### Done ✅
+- [x] Removed blue AppBarLayout/Toolbar
+- [x] Transparent status bar (theme + window.statusBarColor)
+- [x] Dark purple taskbar (#1B1035) with white icons/text
+- [x] Red accent throughout (#E81123)
+- [x] Red window title bars (dark red gradient)
+- [x] Red control center toggle chips
+- [x] Red bloom wallpaper vector
+- [x] Start menu: split layout (all apps left, pinned right)
+- [x] Taskbar search bar: dark semi-transparent on dark BG
+- [x] Fixed NavHostFragment crash (removed visibility=gone)
+- [x] Fixed widget crash (bindAppWidgetIdIfAllowed flow)
+- [x] Real file explorer with folder navigation
+- [x] Task view shows open windows
 
-### VISUAL ENGINE — Ultra-glass 8K aesthetic
-1. item_desktop_icon.xml — glass bg, frosted label pill, crisp icon shadow
-2. layout_custom_taskbar.xml — blur-glass pill, translucent, sharp icons, no flat fill
-3. layout_floating_window.xml — glass titlebar with RGB chrome blur, window-drop shadow
-4. layout_start_menu.xml — dark glass with blur, red/blue accent sidebar active states
-5. layout_control_center.xml — white frosted glass, sharp toggles, sliders
-6. content_main.xml — desktop layer tweaks
+### Potential crash causes still remaining
+- [ ] Check if `binding.appBarMain` works after FrameLayout change
+- [ ] The `navView` reference was removed but `AppBarConfiguration` still references `drawerLayout`
+- [ ] DrawerLayout might need a nav_view or content inside it
 
-### NEW DRAWABLES needed
-- glass_surface_dark (20% white on dark, 1dp border)
-- glass_surface_light (95% white, soft shadow, 1dp border 12% black)
-- window_chrome_bg (titlebar: 93% white on light, dark on dark)
-- taskbar_pill_glass (blur simulation: white 90%, border 8% black, 28dp corners)
-- toggle_active_blue / toggle_active_red
-- icon_bg_glass (per-icon frosted circle bg)
-
-### NEW KT FILES
-- WallpaperManager.kt — WallpaperManager.getInstance + live-set + preview crop
-- QuickSettingsManager.kt — wifi/bt/airplane/nightlight real toggle logic
-- ClockWidget.kt — live clock on desktop as a draggable view
-- GestureController.kt — swipe up = start menu, swipe down = control center
-
-### FUNCTIONAL UPGRADES IN MainActivity
-- Real wifi toggle (WifiManager)
-- Real bluetooth toggle (BluetoothAdapter)
-- Real brightness control (Settings.System.SCREEN_BRIGHTNESS)
-- Real volume control (AudioManager)
-- Real battery level (BatteryManager intent)
-- Real wallpaper picker + apply
-- Swipe gestures on desktop layer
-- Clock/date widget on desktop (always visible, draggable)
-- App drawer as full-screen scrollable grid (replaces start menu All Apps)
-- Recent apps list in taskbar
-
-### LAYOUT POLISH
-- All text: real system fonts (sans-serif-medium)
-- All cards: layered elevation shadows
-- Glassmorphism: semi-transparent + border on every surface
-- Icons: never tinted, full color, no grey generic system icons where real icons available
-- Notification cards: app icon (real), bold title, body text, app name, dismiss
-
-## EXECUTION ORDER
-1. New drawables (glass surfaces, shadows, pills) 
-2. Rebuild item_desktop_icon.xml (glass icon bg)
-3. Rebuild layout_custom_taskbar.xml (glass pill)
-4. Rebuild layout_floating_window.xml (glass chrome)
-5. Rebuild layout_start_menu.xml (dark glass)
-6. Rebuild layout_control_center.xml (frosted light)
-7. WallpaperManager.kt
-8. QuickSettingsManager.kt  
-9. GestureController.kt (swipe gestures)
-10. MainActivity updates (wire all above, battery, brightness, volume, wifi, bt)
-11. ClockWidget on desktop
-12. Push
-
-## DONE MARKER
-[ ] All items above complete
+### Visual issues to check after app runs
+- [ ] Start menu "All apps" button (like WinX shows)  
+- [ ] Control center header should be pinkish/red tinted
+- [ ] File explorer colors matching red theme

@@ -55,7 +55,7 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var appBarConfiguration: AppBarConfiguration
+    private var appBarConfiguration: AppBarConfiguration = AppBarConfiguration(emptySet())
     private lateinit var binding: ActivityMainBinding
     private var allInstalledApps = mutableListOf<AppModel>()
     private lateinit var statsManager: SystemStatsManager
@@ -232,15 +232,17 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
-        val navHostFragment =
-            (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
-        val navController = navHostFragment.navController
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment_content_main) as? NavHostFragment
+        val navController = navHostFragment?.navController
 
         // Navigation setup without action bar (no toolbar)
-        appBarConfiguration = AppBarConfiguration(
-            setOf(R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings),
-            binding.drawerLayout
-        )
+        if (navController != null) {
+            appBarConfiguration = AppBarConfiguration(
+                setOf(R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings),
+                binding.drawerLayout
+            )
+        }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -354,7 +356,7 @@ class MainActivity : AppCompatActivity() {
         taskbarRoot.findViewById<View>(R.id.btn_taskbar_explorer)?.setOnClickListener { openFileExplorer() }
         taskbarRoot.findViewById<View>(R.id.btn_taskbar_browser)?.setOnClickListener  { openBrowser() }
         taskbarRoot.findViewById<View>(R.id.btn_taskbar_settings)?.setOnClickListener {
-            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+            try { findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings) } catch (e: Exception) { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) }
         }
 
         val openCC = { ->
@@ -463,7 +465,7 @@ class MainActivity : AppCompatActivity() {
         // More settings
         root.findViewById<View>(R.id.btn_more_settings)?.setOnClickListener {
             toggleControlCenter(false)
-            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+            try { findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings) } catch (e: Exception) { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) }
         }
 
         // Resize handle
@@ -813,7 +815,7 @@ class MainActivity : AppCompatActivity() {
                 1 -> widgetHostManager.pickWidget(widgetPickerLauncher)
                 2 -> pickWallpaper()
                 3 -> startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-                4 -> findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+                4 -> try { findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings) } catch (e: Exception) { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) }
             }
             true
         }
@@ -1199,7 +1201,7 @@ class MainActivity : AppCompatActivity() {
         start.btnPower.setOnClickListener { showPowerMenu(it) }
         start.btnSettingsQuick.setOnClickListener {
             toggleStartMenu(false)
-            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+            try { findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings) } catch (e: Exception) { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) }
         }
         start.btnLockQuick.setOnClickListener {
             val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -1348,7 +1350,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.nav_settings -> {
-                findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+                try { findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings) } catch (e: Exception) { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) }
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -1356,7 +1358,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        val navController = findNavController(R.id.nav_host_fragment_content_main)
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+        return try {
+            val navController = findNavController(R.id.nav_host_fragment_content_main)
+            navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+        } catch (e: Exception) {
+            super.onSupportNavigateUp()
+        }
     }
 }
