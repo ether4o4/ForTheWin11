@@ -3,10 +3,10 @@
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
 
-    <!-- Win11 Accent (Blue default) -->
-    <color name="win11_accent">#FF0078D4</color>
-    <color name="win11_accent_dim">#330078D4</color>
-    <color name="win11_accent_glow">#1A0078D4</color>
+    <!-- Win11 Accent (Red default — matching WinX theme) -->
+    <color name="win11_accent">#FFE81123</color>
+    <color name="win11_accent_dim">#33E81123</color>
+    <color name="win11_accent_glow">#1AE81123</color>
 
     <!-- Win11 Red accent -->
     <color name="win11_red">#FFE74856</color>
