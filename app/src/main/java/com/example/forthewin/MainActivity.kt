@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ── Widget picker — 2-step flow: pick → configure (optional) → create ──
+    // ── Widget picker — 3-step flow: pick → bind permission → configure (optional) → create ──
     private val widgetConfigureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
         val id = if (appWidgetId != -1) appWidgetId else widgetHostManager.pendingWidgetId
@@ -101,14 +101,49 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Bind permission result — the system asks user "Allow this launcher to use this widget?"
+    private val widgetBindPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
+        val id = if (appWidgetId != -1) appWidgetId else widgetHostManager.pendingWidgetId
+        try {
+            if (result.resultCode == RESULT_OK && id != -1) {
+                // Bind succeeded, now check if configure is needed
+                val needsConfigure = widgetHostManager.launchConfigureIfNeeded(id, widgetConfigureLauncher)
+                if (!needsConfigure) {
+                    finalizeWidget(id)
+                }
+            } else {
+                widgetHostManager.safeDeleteId(id)
+                Snackbar.make(binding.root, "Widget permission denied", Snackbar.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "widgetBindPermission callback", e)
+            widgetHostManager.safeDeleteId(id)
+        }
+    }
+
     private val widgetPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
         val id = if (appWidgetId != -1) appWidgetId else widgetHostManager.pendingWidgetId
         try {
             if (result.resultCode == RESULT_OK && id != -1) {
-                val needsConfigure = widgetHostManager.launchConfigureIfNeeded(id, widgetConfigureLauncher)
-                if (!needsConfigure) {
-                    finalizeWidget(id)
+                // After picking, we need to BIND the widget (third-party apps can't just use BIND_APPWIDGET)
+                val info = widgetHostManager.getWidgetProvider(id)
+                if (info?.provider != null) {
+                    val boundDirectly = widgetHostManager.bindWidgetOrRequestPermission(
+                        id, info.provider, widgetBindPermissionLauncher
+                    )
+                    if (boundDirectly) {
+                        // Already bound, proceed to configure or finalize
+                        val needsConfigure = widgetHostManager.launchConfigureIfNeeded(id, widgetConfigureLauncher)
+                        if (!needsConfigure) {
+                            finalizeWidget(id)
+                        }
+                    }
+                    // If not bound directly, widgetBindPermissionLauncher will handle the result
+                } else {
+                    widgetHostManager.safeDeleteId(id)
+                    Snackbar.make(binding.root, "Widget info not available", Snackbar.LENGTH_SHORT).show()
                 }
             } else {
                 widgetHostManager.safeDeleteId(id)
@@ -165,8 +200,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setSupportActionBar(binding.appBarMain.toolbar)
-        supportActionBar?.hide()
+        // No toolbar — removed AppBarLayout entirely to eliminate blue bar
 
         statsManager  = SystemStatsManager(this)
         fileIndexer   = FileIndexer(this)
@@ -198,14 +232,11 @@ class MainActivity : AppCompatActivity() {
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
         val navController = navHostFragment.navController
 
-        binding.navView?.let {
-            appBarConfiguration = AppBarConfiguration(
-                setOf(R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings),
-                binding.drawerLayout
-            )
-            setupActionBarWithNavController(navController, appBarConfiguration)
-            it.setupWithNavController(navController)
-        }
+        // Navigation setup without action bar (no toolbar)
+        appBarConfiguration = AppBarConfiguration(
+            setOf(R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings),
+            binding.drawerLayout
+        )
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -313,7 +344,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         taskbarRoot.findViewById<View>(R.id.btn_taskbar_taskview)?.setOnClickListener {
-            Snackbar.make(binding.root, "Task View", Snackbar.LENGTH_SHORT).show()
+            showTaskView()
         }
 
         taskbarRoot.findViewById<View>(R.id.btn_taskbar_explorer)?.setOnClickListener { openFileExplorer() }
@@ -555,7 +586,6 @@ class MainActivity : AppCompatActivity() {
         val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
         if (sm.root.visibility != View.VISIBLE) return
         // Refresh items with current theme
-        populateAllAppsList(sm)
         populatePinnedApps(sm)
         populateRecommended(sm)
     }
@@ -564,7 +594,7 @@ class MainActivity : AppCompatActivity() {
         val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
         if (sm.root.visibility == View.VISIBLE) {
             populatePinnedApps(sm)
-            populateAllAppsList(sm)
+            populateRecommended(sm)
         }
     }
 
@@ -650,6 +680,120 @@ class MainActivity : AppCompatActivity() {
         badge.visibility = if (count > 0) View.VISIBLE else View.INVISIBLE
     }
 
+    // ── Task View ──────────────────────────────────────────────────
+    private fun showTaskView() {
+        val windowContainer = binding.appBarMain.contentMain.floatingWindowContainer ?: return
+        val childCount = windowContainer.childCount
+        if (childCount == 0) {
+            Snackbar.make(binding.root, "No open windows", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        // Create a task view overlay
+        val overlay = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(0xCC1A1A2E.toInt())
+            elevation = 100f
+            isClickable = true
+            isFocusable = true
+        }
+
+        val scrollView = android.widget.HorizontalScrollView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply { gravity = android.view.Gravity.CENTER }
+            isHorizontalScrollBarEnabled = false
+        }
+
+        val cardsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(32, 32, 32, 32)
+        }
+
+        // Header
+        val header = TextView(this).apply {
+            text = "Task View"
+            textSize = 18f
+            setTextColor(0xFFFFFFFF.toInt())
+            setPadding(32, 48, 32, 16)
+        }
+
+        // Collect window info
+        for (i in 0 until childCount) {
+            val win = windowContainer.getChildAt(i) ?: continue
+            if (win.visibility == View.GONE) continue
+
+            val title = win.findViewById<TextView>(R.id.window_title)?.text?.toString() ?: "Window ${i + 1}"
+
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(16, 16, 16, 16)
+                val shape = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFF2C2C3E.toInt())
+                    cornerRadius = 12f * resources.displayMetrics.density
+                    setStroke(2, 0xFF0078D4.toInt())
+                }
+                background = shape
+                val dp = resources.displayMetrics.density
+                layoutParams = LinearLayout.LayoutParams((180 * dp).toInt(), (140 * dp).toInt()).apply {
+                    setMargins((8 * dp).toInt(), 0, (8 * dp).toInt(), 0)
+                }
+                elevation = 8f
+            }
+
+            val titleView = TextView(this).apply {
+                text = title
+                textSize = 13f
+                setTextColor(0xFFFFFFFF.toInt())
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(0, 0, 0, 8)
+            }
+
+            val preview = View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0
+                ).apply { weight = 1f }
+                setBackgroundColor(0xFF3C3C4E.toInt())
+            }
+
+            card.addView(titleView)
+            card.addView(preview)
+
+            // Click card to bring window to front and close task view
+            val windowRef = win
+            card.setOnClickListener {
+                windowRef.visibility = View.VISIBLE
+                windowRef.alpha = 1f
+                windowRef.scaleX = 1f
+                windowRef.scaleY = 1f
+                windowRef.bringToFront()
+                windowContainer.removeView(overlay)
+            }
+
+            cardsContainer.addView(card)
+        }
+
+        scrollView.addView(cardsContainer)
+
+        overlay.addView(header)
+        overlay.addView(scrollView)
+
+        // Tap background to dismiss
+        overlay.setOnClickListener {
+            windowContainer.removeView(overlay)
+        }
+
+        windowContainer.addView(overlay)
+        overlay.alpha = 0f
+        overlay.animate().alpha(1f).setDuration(200).start()
+    }
+
     // ── Desktop context menu ──────────────────────────────────────────
     private fun showDesktopContextMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
@@ -670,13 +814,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pickWallpaper() {
-        // Option 1: system chooser
         try {
-            val intent = Intent(Intent.ACTION_SET_WALLPAPER)
-            startActivity(Intent.createChooser(intent, "Choose Wallpaper"))
+            // On API 34+, use the photo picker directly since ACTION_SET_WALLPAPER
+            // may not work reliably with all launchers
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                // Use the new Photo Picker on Android 14+
+                val intent = android.provider.MediaStore.createWriteRequest(
+                    contentResolver, emptyList()
+                )
+                // Fallback: launch gallery picker and apply wallpaper ourselves
+                wallpaperPickerLauncher.launch("image/*")
+            } else {
+                // Try system wallpaper chooser first
+                val intent = Intent(Intent.ACTION_SET_WALLPAPER)
+                startActivity(Intent.createChooser(intent, "Choose Wallpaper"))
+            }
         } catch (e: Exception) {
-            // Option 2: gallery picker → apply ourselves
-            wallpaperPickerLauncher.launch("image/*")
+            // Final fallback: gallery picker → apply ourselves
+            try {
+                wallpaperPickerLauncher.launch("image/*")
+            } catch (e2: Exception) {
+                Snackbar.make(binding.root, "Cannot open image picker", Snackbar.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -816,7 +975,116 @@ class MainActivity : AppCompatActivity() {
             val v = layoutInflater.inflate(R.layout.layout_file_explorer, container, false)
             container.addView(v)
 
+            // Current path state
+            var currentPath = android.os.Environment.getExternalStorageDirectory()
+
+            // Path mapping for sidebar
+            val pathMap = mapOf(
+                "Home" to android.os.Environment.getExternalStorageDirectory(),
+                "Desktop" to java.io.File(android.os.Environment.getExternalStorageDirectory(), "Desktop"),
+                "Documents" to android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS),
+                "Downloads" to android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+                "Pictures" to android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES),
+                "Music" to android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC),
+                "Videos" to android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MOVIES),
+                "This PC" to java.io.File("/storage")
+            )
+
             val sidebarContainer = v.findViewById<LinearLayout>(R.id.explorer_sidebar_container)
+            val quickGrid = v.findViewById<GridLayout>(R.id.quick_access_grid)
+            val recentList = v.findViewById<LinearLayout>(R.id.recent_files_list)
+            val itemCountView = v.findViewById<TextView>(R.id.explorer_item_count)
+
+            // Function to display files in the content area
+            fun navigateTo(path: java.io.File) {
+                currentPath = path
+                quickGrid.removeAllViews()
+                recentList.removeAllViews()
+
+                // Update breadcrumb-like item count
+                val files = try { path.listFiles()?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() })) } catch (e: Exception) { null }
+
+                if (files == null || files.isEmpty()) {
+                    recentList.addView(TextView(this).apply {
+                        text = if (files == null) "Cannot access this folder. Grant storage permission in Settings." else "This folder is empty."
+                        setTextColor(0x88000000.toInt()); textSize = 12f; setPadding(8, 16, 8, 8)
+                    })
+                    itemCountView?.text = "0 items"
+                    return
+                }
+
+                itemCountView?.text = "${files.size} items"
+
+                // Show files as grid items (folders) and list items (files)
+                val folders = files.filter { it.isDirectory }
+                val regularFiles = files.filter { it.isFile }
+
+                // Show folders in the grid
+                folders.take(12).forEach { folder ->
+                    val item = layoutInflater.inflate(R.layout.item_recommended_file, quickGrid, false)
+                    val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    val lp = GridLayout.LayoutParams(spec, spec).apply { width = 0 }
+                    item.layoutParams = lp
+                    item.findViewById<TextView>(R.id.file_name).text = folder.name
+                    item.findViewById<TextView>(R.id.file_subtitle).text = "${folder.listFiles()?.size ?: 0} items"
+                    item.findViewById<ImageView>(R.id.file_icon).apply {
+                        setImageResource(R.drawable.ic_win11_folder)
+                        setColorFilter(0xFFFFB900.toInt(), PorterDuff.Mode.SRC_IN)
+                    }
+                    // Click to navigate into folder
+                    item.setOnClickListener { navigateTo(folder) }
+                    quickGrid.addView(item)
+                }
+
+                // Show files in list
+                regularFiles.take(20).forEach { file ->
+                    val item = layoutInflater.inflate(R.layout.item_recommended_file, recentList, false)
+                    item.findViewById<TextView>(R.id.file_name).text = file.name
+                    val sizeStr = when {
+                        file.length() < 1024 -> "${file.length()} B"
+                        file.length() < 1024 * 1024 -> "${file.length() / 1024} KB"
+                        else -> "${file.length() / (1024 * 1024)} MB"
+                    }
+                    item.findViewById<TextView>(R.id.file_subtitle).text = "$sizeStr · ${file.extension.uppercase().ifEmpty { "File" }}"
+                    val iconRes = when (file.extension.lowercase()) {
+                        "jpg", "jpeg", "png", "gif", "webp" -> android.R.drawable.ic_menu_gallery
+                        "mp3", "wav", "ogg", "flac" -> android.R.drawable.ic_lock_silent_mode_off
+                        "mp4", "mkv", "avi" -> android.R.drawable.ic_menu_slideshow
+                        "pdf", "doc", "docx", "txt" -> android.R.drawable.ic_menu_edit
+                        "apk" -> android.R.drawable.sym_def_app_icon
+                        else -> android.R.drawable.ic_menu_more
+                    }
+                    item.findViewById<ImageView>(R.id.file_icon).setImageResource(iconRes)
+                    // Open file with system
+                    item.setOnClickListener {
+                        try {
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                this, "$packageName.fileprovider", file
+                            )
+                            val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(uri, contentResolver.getType(uri) ?: "*/*")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            startActivity(openIntent)
+                        } catch (e: Exception) {
+                            // Fallback: try direct URI
+                            try {
+                                val uri = android.net.Uri.fromFile(file)
+                                val openIntent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, "*/*")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(openIntent)
+                            } catch (e2: Exception) {
+                                Snackbar.make(binding.root, "Cannot open: ${file.name}", Snackbar.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    recentList.addView(item)
+                }
+            }
+
+            // Setup sidebar navigation
             listOf(
                 Pair("Home", R.drawable.ic_win11_folder),
                 Pair("Desktop", android.R.drawable.ic_menu_view),
@@ -834,47 +1102,34 @@ class MainActivity : AppCompatActivity() {
                     item.findViewById<View>(R.id.active_indicator).visibility = View.VISIBLE
                     item.setBackgroundColor(0x110078D4)
                 }
+                // Click sidebar to navigate
+                item.setOnClickListener {
+                    // Update active state
+                    for (i in 0 until sidebarContainer.childCount) {
+                        val child = sidebarContainer.getChildAt(i)
+                        child.setBackgroundColor(0x00000000)
+                        child.findViewById<View>(R.id.active_indicator)?.visibility = View.GONE
+                    }
+                    item.setBackgroundColor(0x110078D4)
+                    item.findViewById<View>(R.id.active_indicator)?.visibility = View.VISIBLE
+
+                    val target = pathMap[label] ?: currentPath
+                    if (!target.exists()) target.mkdirs()
+                    navigateTo(target)
+                }
                 sidebarContainer.addView(item)
             }
 
-            val quickGrid = v.findViewById<GridLayout>(R.id.quick_access_grid)
-            listOf(
-                Triple("Desktop", 0xFFE74856.toInt(), R.drawable.ic_win11_folder),
-                Triple("Documents", 0xFFFFB900.toInt(), R.drawable.ic_win11_folder),
-                Triple("Downloads", 0xFF00B294.toInt(), R.drawable.ic_win11_folder),
-                Triple("Pictures", 0xFFE74856.toInt(), R.drawable.ic_win11_folder),
-                Triple("Music", 0xFFFFB900.toInt(), R.drawable.ic_win11_folder),
-                Triple("Videos", 0xFF8764B8.toInt(), R.drawable.ic_win11_folder)
-            ).forEach { (name, color, iconRes) ->
-                val item = layoutInflater.inflate(R.layout.item_recommended_file, quickGrid, false)
-                val spec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                val lp = GridLayout.LayoutParams(spec, spec).apply { width = 0 }
-                item.layoutParams = lp
-                item.findViewById<TextView>(R.id.file_name).text = name
-                item.findViewById<TextView>(R.id.file_subtitle).text = "Stored locally"
-                item.findViewById<ImageView>(R.id.file_icon).apply {
-                    setImageResource(iconRes); setColorFilter(color, PorterDuff.Mode.SRC_IN)
+            // Back button (address bar back arrow)
+            v.findViewById<View>(R.id.explorer_back_btn)?.setOnClickListener {
+                val parent = currentPath.parentFile
+                if (parent != null && parent.canRead()) {
+                    navigateTo(parent)
                 }
-                quickGrid.addView(item)
             }
 
-            val recentList = v.findViewById<LinearLayout>(R.id.recent_files_list)
-            val recents = fileIndexer.getRecentFiles(8)
-            if (recents.isEmpty()) {
-                recentList.addView(TextView(this).apply {
-                    text = "No recent files. Open documents, images, or spreadsheets and they'll appear here."
-                    setTextColor(0x88000000.toInt()); textSize = 12f; setPadding(8, 8, 8, 8)
-                })
-            } else {
-                recents.forEach { file ->
-                    val item = layoutInflater.inflate(R.layout.item_recommended_file, recentList, false)
-                    item.findViewById<TextView>(R.id.file_name).text = file.name
-                    item.findViewById<TextView>(R.id.file_subtitle).text = "${file.extension.uppercase()} · Recent"
-                    item.findViewById<ImageView>(R.id.file_icon).setImageResource(android.R.drawable.ic_menu_edit)
-                    recentList.addView(item)
-                }
-            }
-            v.findViewById<TextView>(R.id.explorer_item_count)?.text = "6 folders"
+            // Initial load
+            navigateTo(currentPath)
         }
     }
 
@@ -922,14 +1177,13 @@ class MainActivity : AppCompatActivity() {
 
     // ── Start Menu internals ──────────────────────────────────────────
     private fun setupStartMenuActions(start: LayoutStartMenuBinding) {
-        populateAllAppsList(start)
         populateRecommended(start)
         populatePinnedApps(start)
 
         start.startSearchInput.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
-                filterStartMenuContent(s.toString())
+                filterStartMenuContent(s.toString(), start)
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
@@ -951,31 +1205,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun populateAllAppsList(start: LayoutStartMenuBinding) {
-        val container = start.allAppsList
-        container.removeAllViews()
-        allInstalledApps.sortedBy { it.label.lowercase() }.forEach { app ->
-            val v = layoutInflater.inflate(R.layout.item_app_list_row, container, false)
-            v.findViewById<ImageView>(R.id.app_row_icon).setImageDrawable(app.bestIcon())
-            v.findViewById<TextView>(R.id.app_row_label).text = app.label
-            v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
-            v.setOnLongClickListener { showAppContextMenu(v, app); true }
-            container.addView(v)
-        }
+        // All apps list is now hidden (used only for search filtering)
+        // Pinned grid is the main view in Win11 style
     }
 
-    private fun filterStartMenuContent(query: String) {
-        val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
-        val container = sm.allAppsList
-        container.removeAllViews()
-        val filtered = if (query.isEmpty()) allInstalledApps.sortedBy { it.label.lowercase() }
-            else allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }.sortedBy { it.label.lowercase() }
+    private fun filterStartMenuContent(query: String, start: LayoutStartMenuBinding) {
+        val allAppsScroll = start.allAppsScroll
+        val allAppsList = start.allAppsList
+        val pinnedSection = start.pinnedSection
+        val recommendedSection = start.recommendedSection
+
+        if (query.isEmpty()) {
+            // Show pinned/recommended, hide all apps list
+            allAppsScroll.visibility = View.GONE
+            pinnedSection.visibility = View.VISIBLE
+            recommendedSection.visibility = View.VISIBLE
+            return
+        }
+
+        // Show all apps list with filtered results, hide pinned/recommended
+        allAppsScroll.visibility = View.VISIBLE
+        pinnedSection.visibility = View.GONE
+        recommendedSection.visibility = View.GONE
+
+        allAppsList.removeAllViews()
+        val filtered = allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }
+            .sortedBy { it.label.lowercase() }
         filtered.forEach { app ->
-            val v = layoutInflater.inflate(R.layout.item_app_list_row, container, false)
+            val v = layoutInflater.inflate(R.layout.item_app_list_row, allAppsList, false)
             v.findViewById<ImageView>(R.id.app_row_icon).setImageDrawable(app.bestIcon())
             v.findViewById<TextView>(R.id.app_row_label).text = app.label
             v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
             v.setOnLongClickListener { showAppContextMenu(v, app); true }
-            container.addView(v)
+            allAppsList.addView(v)
+        }
+        if (filtered.isEmpty()) {
+            allAppsList.addView(TextView(this).apply {
+                text = "No results for \"$query\""
+                setTextColor(0x88000000.toInt()); textSize = 13f; setPadding(16, 24, 16, 24)
+            })
         }
     }
 
@@ -991,10 +1259,10 @@ class MainActivity : AppCompatActivity() {
     private fun populatePinnedApps(start: LayoutStartMenuBinding) {
         val grid = start.pinnedAppsGrid
         grid.removeAllViews()
-        val cols = ThemeManager.startColumns(this)
+        val cols = 5  // Win11 uses 5 columns for pinned
         grid.columnCount = cols
-        val maxItems = cols * 3 // 3 rows of pinned apps
-        val priority = listOf("File Explorer","Microsoft Edge","Notepad","Photos","Settings","Calculator","Camera","Maps","Clock","YouTube","Gmail","Chrome")
+        val maxItems = cols * 3 // 3 rows of pinned apps (15 total)
+        val priority = listOf("File Explorer","Microsoft Edge","Notepad","Photos","Settings","Calculator","Camera","Maps","Clock","YouTube","Gmail","Chrome","Phone","Messages","Play Store")
         allInstalledApps.filter { it.label in priority }
             .plus(allInstalledApps.filter { it.label !in priority })
             .distinctBy { it.packageName }.take(maxItems)

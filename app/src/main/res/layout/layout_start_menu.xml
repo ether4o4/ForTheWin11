@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Win11 Start Menu — light theme, split layout: left=all apps, right=pinned+recents -->
+<!-- Win11 Start Menu — centered rounded panel, light theme -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -8,24 +8,25 @@
     android:orientation="vertical"
     android:elevation="32dp"
     android:clipChildren="false"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:padding="4dp">
 
-    <!-- ── Search Bar (full width) ──────────────────────────────── -->
+    <!-- ── Search Bar ──────────────────────────────────────────── -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="44dp"
         android:background="@drawable/search_bar_light"
         android:gravity="center_vertical"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="12dp"
         android:paddingStart="14dp"
         android:paddingEnd="14dp">
 
         <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:src="@drawable/ic_win11_search"
             app:tint="#88000000"
             android:contentDescription="Search icon" />
@@ -40,7 +41,7 @@
             android:hint="Search apps, settings, files…"
             android:textColor="#FF000000"
             android:textColorHint="#88000000"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:fontFamily="sans-serif"
             android:inputType="text"
             android:importantForAutofill="no"
@@ -48,155 +49,127 @@
             android:singleLine="true" />
     </LinearLayout>
 
-    <!-- ── Split content area (left=all apps, right=pinned+recents) ── -->
+    <!-- ── Pinned Section ──────────────────────────────────────── -->
     <LinearLayout
+        android:id="@+id/pinned_section"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="horizontal"
-        android:baselineAligned="false">
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
 
-        <!-- ── LEFT HALF: All Apps scrollable list ────────────── -->
+        <!-- Pinned header row -->
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingBottom="8dp">
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="All apps"
-                android:textColor="#FF1A1A1A"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.02"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp" />
-
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
                 android:layout_weight="1"
-                android:scrollbars="none"
-                android:fadeScrollbars="true"
-                android:overScrollMode="ifContentScrolls">
-
-                <LinearLayout
-                    android:id="@+id/all_apps_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="4dp"
-                    android:paddingBottom="8dp" />
-            </ScrollView>
-        </LinearLayout>
-
-        <!-- Thin vertical divider -->
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#14000000"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- ── RIGHT HALF: Pinned + Recommended ───────────────── -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingStart="4dp">
-
-            <!-- Pinned header -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:text="Pinned"
                 android:textColor="#FF1A1A1A"
                 android:textSize="14sp"
+                android:fontFamily="sans-serif-medium" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All apps  ›"
+                android:textColor="#FF0078D4"
+                android:textSize="12sp"
                 android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.02"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp" />
-
-            <!-- Pinned grid -->
-            <GridLayout
-                android:id="@+id/pinned_apps_grid"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:columnCount="3"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp" />
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#14000000"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp" />
-
-            <!-- Recommended header -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="4dp"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Recommended"
-                    android:textColor="#FF1A1A1A"
-                    android:textSize="13sp"
-                    android:fontFamily="sans-serif-medium" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="More  ›"
-                    android:textColor="#88000000"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <!-- Recommended items -->
-            <LinearLayout
-                android:id="@+id/recommended_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="4dp" />
-
+                android:paddingEnd="4dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/quick_toggle_off" />
         </LinearLayout>
+
+        <!-- Pinned apps grid — 5 columns matching Win11 -->
+        <GridLayout
+            android:id="@+id/pinned_apps_grid"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:columnCount="5"
+            android:rowCount="3" />
+
     </LinearLayout>
 
-    <!-- ── Divider above power bar ───────────────────────────────── -->
+    <!-- ── Divider ─────────────────────────────────────────────── -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#14000000"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp" />
+        android:background="#12000000"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp" />
 
-    <!-- ── Power bar (full width) ────────────────────────────────── -->
+    <!-- ── Recommended Section ─────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/recommended_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="12dp">
+
+        <!-- Recommended header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Recommended"
+                android:textColor="#FF1A1A1A"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="More  ›"
+                android:textColor="#FF0078D4"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:paddingStart="8dp"
+                android:paddingEnd="4dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/quick_toggle_off" />
+        </LinearLayout>
+
+        <!-- Recommended items (2-column grid) -->
+        <LinearLayout
+            android:id="@+id/recommended_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="4dp" />
+    </LinearLayout>
+
+    <!-- ── Divider ─────────────────────────────────────────────── -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#12000000"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="8dp" />
+
+    <!-- ── Power / Account bar ─────────────────────────────────── -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="52dp"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
+        android:paddingStart="20dp"
         android:paddingEnd="16dp"
-        android:orientation="horizontal"
-        android:layout_marginTop="4dp">
+        android:orientation="horizontal">
 
         <!-- Avatar / Account -->
         <LinearLayout
@@ -233,14 +206,14 @@
         <!-- Settings -->
         <FrameLayout
             android:id="@+id/btn_settings_quick"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="@drawable/taskbar_icon_ripple"
             android:clickable="true"
             android:focusable="true">
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_win11_settings"
                 app:tint="#FF444444"
@@ -250,8 +223,8 @@
         <!-- Lock -->
         <FrameLayout
             android:id="@+id/btn_lock_quick"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="@drawable/taskbar_icon_ripple"
             android:clickable="true"
             android:focusable="true">
@@ -260,15 +233,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="🔒"
-                android:textSize="18sp"
-                android:contentDescription="Lock" />
+                android:textSize="16sp" />
         </FrameLayout>
 
-        <!-- Sleep / Moon -->
+        <!-- Sleep -->
         <FrameLayout
             android:id="@+id/btn_moon_quick"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="@drawable/taskbar_icon_ripple"
             android:clickable="true"
             android:focusable="true">
@@ -277,15 +249,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="🌙"
-                android:textSize="18sp"
-                android:contentDescription="Sleep" />
+                android:textSize="16sp" />
         </FrameLayout>
 
         <!-- Power -->
         <FrameLayout
             android:id="@+id/btn_power"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="@drawable/taskbar_icon_ripple"
             android:clickable="true"
             android:focusable="true">
@@ -295,10 +266,28 @@
                 android:layout_gravity="center"
                 android:text="⏻"
                 android:textColor="#FF444444"
-                android:textSize="18sp"
-                android:contentDescription="Power" />
+                android:textSize="16sp" />
         </FrameLayout>
 
     </LinearLayout>
+
+    <!-- All apps list (shown when searching, hidden otherwise) -->
+    <ScrollView
+        android:id="@+id/all_apps_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="gone"
+        android:scrollbars="none"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+        <LinearLayout
+            android:id="@+id/all_apps_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+    </ScrollView>
 
 </LinearLayout>

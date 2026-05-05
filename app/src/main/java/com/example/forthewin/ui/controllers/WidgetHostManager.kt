@@ -3,6 +3,8 @@ package com.example.forthewin.ui.controllers
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -16,6 +18,7 @@ class WidgetHostManager(private val activity: ComponentActivity) {
     companion object {
         private const val TAG = "WidgetHostManager"
         private const val APPWIDGET_HOST_ID = 1024
+        const val REQUEST_BIND_APPWIDGET = 1025
     }
 
     private val appWidgetManager = AppWidgetManager.getInstance(activity)
@@ -50,6 +53,35 @@ class WidgetHostManager(private val activity: ComponentActivity) {
     }
 
     /**
+     * After picking a widget, we must BIND it. Third-party apps cannot hold BIND_APPWIDGET,
+     * so we use bindAppWidgetIdIfAllowed(). If it returns false, we must ask the user
+     * to grant permission via an intent.
+     *
+     * Returns true if binding succeeded immediately, false if a permission request was launched.
+     */
+    fun bindWidgetOrRequestPermission(
+        appWidgetId: Int,
+        provider: ComponentName,
+        bindPermissionLauncher: ActivityResultLauncher<Intent>
+    ): Boolean {
+        // Try to bind directly (will succeed if user previously granted permission for this widget)
+        val bound = appWidgetManager.bindAppWidgetIdIfAllowed(appWidgetId, provider)
+        if (bound) {
+            Log.d(TAG, "Widget bound directly: $provider")
+            return true
+        }
+
+        // Need user permission — launch the bind request dialog
+        Log.d(TAG, "Requesting bind permission for widget: $provider")
+        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, provider)
+        }
+        bindPermissionLauncher.launch(intent)
+        return false
+    }
+
+    /**
      * Check if widget needs a configure activity. Returns true if launched.
      */
     fun launchConfigureIfNeeded(appWidgetId: Int, launcher: ActivityResultLauncher<Intent>): Boolean {
@@ -73,6 +105,16 @@ class WidgetHostManager(private val activity: ComponentActivity) {
         } catch (e: Exception) {
             Log.e(TAG, "launchConfigure failed", e)
             return false
+        }
+    }
+
+    /** Get the provider info for a picked widget */
+    fun getWidgetProvider(appWidgetId: Int): AppWidgetProviderInfo? {
+        return try {
+            appWidgetManager.getAppWidgetInfo(appWidgetId)
+        } catch (e: Exception) {
+            Log.e(TAG, "getWidgetProvider failed for id=$appWidgetId", e)
+            null
         }
     }
 
