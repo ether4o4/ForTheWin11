@@ -585,7 +585,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyThemeToStartMenu() {
         val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
         if (sm.root.visibility != View.VISIBLE) return
-        // Refresh items with current theme
+        populateAllAppsList(sm)
         populatePinnedApps(sm)
         populateRecommended(sm)
     }
@@ -593,6 +593,7 @@ class MainActivity : AppCompatActivity() {
     fun refreshStartMenu() {
         val sm = binding.appBarMain.contentMain.startMenuPanel ?: return
         if (sm.root.visibility == View.VISIBLE) {
+            populateAllAppsList(sm)
             populatePinnedApps(sm)
             populateRecommended(sm)
         }
@@ -1177,6 +1178,7 @@ class MainActivity : AppCompatActivity() {
 
     // ── Start Menu internals ──────────────────────────────────────────
     private fun setupStartMenuActions(start: LayoutStartMenuBinding) {
+        populateAllAppsList(start)
         populateRecommended(start)
         populatePinnedApps(start)
 
@@ -1205,42 +1207,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun populateAllAppsList(start: LayoutStartMenuBinding) {
-        // All apps list is now hidden (used only for search filtering)
-        // Pinned grid is the main view in Win11 style
-    }
-
-    private fun filterStartMenuContent(query: String, start: LayoutStartMenuBinding) {
-        val allAppsScroll = start.allAppsScroll
-        val allAppsList = start.allAppsList
-        val pinnedSection = start.pinnedSection
-        val recommendedSection = start.recommendedSection
-
-        if (query.isEmpty()) {
-            // Show pinned/recommended, hide all apps list
-            allAppsScroll.visibility = View.GONE
-            pinnedSection.visibility = View.VISIBLE
-            recommendedSection.visibility = View.VISIBLE
-            return
-        }
-
-        // Show all apps list with filtered results, hide pinned/recommended
-        allAppsScroll.visibility = View.VISIBLE
-        pinnedSection.visibility = View.GONE
-        recommendedSection.visibility = View.GONE
-
-        allAppsList.removeAllViews()
-        val filtered = allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }
-            .sortedBy { it.label.lowercase() }
-        filtered.forEach { app ->
-            val v = layoutInflater.inflate(R.layout.item_app_list_row, allAppsList, false)
+        val container = start.allAppsList
+        container.removeAllViews()
+        allInstalledApps.sortedBy { it.label.lowercase() }.forEach { app ->
+            val v = layoutInflater.inflate(R.layout.item_app_list_row, container, false)
             v.findViewById<ImageView>(R.id.app_row_icon).setImageDrawable(app.bestIcon())
             v.findViewById<TextView>(R.id.app_row_label).text = app.label
             v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
             v.setOnLongClickListener { showAppContextMenu(v, app); true }
-            allAppsList.addView(v)
+            container.addView(v)
+        }
+    }
+
+    private fun filterStartMenuContent(query: String, start: LayoutStartMenuBinding) {
+        val allAppsScroll = start.allAppsScroll
+        val searchResultsList = start.searchResultsList
+        val pinnedSection = start.pinnedSection
+
+        if (query.isEmpty()) {
+            // Show split layout, hide search results
+            allAppsScroll.visibility = View.GONE
+            pinnedSection.visibility = View.VISIBLE
+            return
+        }
+
+        // Show search results, hide split layout
+        allAppsScroll.visibility = View.VISIBLE
+        pinnedSection.visibility = View.GONE
+
+        searchResultsList.removeAllViews()
+        val filtered = allInstalledApps.filter { it.label.contains(query, ignoreCase = true) }
+            .sortedBy { it.label.lowercase() }
+        filtered.forEach { app ->
+            val v = layoutInflater.inflate(R.layout.item_app_list_row, searchResultsList, false)
+            v.findViewById<ImageView>(R.id.app_row_icon).setImageDrawable(app.bestIcon())
+            v.findViewById<TextView>(R.id.app_row_label).text = app.label
+            v.setOnClickListener { launchApp(app.packageName); toggleStartMenu(false) }
+            v.setOnLongClickListener { showAppContextMenu(v, app); true }
+            searchResultsList.addView(v)
         }
         if (filtered.isEmpty()) {
-            allAppsList.addView(TextView(this).apply {
+            searchResultsList.addView(TextView(this).apply {
                 text = "No results for \"$query\""
                 setTextColor(0x88000000.toInt()); textSize = 13f; setPadding(16, 24, 16, 24)
             })
@@ -1259,9 +1266,9 @@ class MainActivity : AppCompatActivity() {
     private fun populatePinnedApps(start: LayoutStartMenuBinding) {
         val grid = start.pinnedAppsGrid
         grid.removeAllViews()
-        val cols = 5  // Win11 uses 5 columns for pinned
+        val cols = 3  // 3 columns matching WinX right panel
         grid.columnCount = cols
-        val maxItems = cols * 3 // 3 rows of pinned apps (15 total)
+        val maxItems = cols * 4 // 4 rows of pinned apps (12 total)
         val priority = listOf("File Explorer","Microsoft Edge","Notepad","Photos","Settings","Calculator","Camera","Maps","Clock","YouTube","Gmail","Chrome","Phone","Messages","Play Store")
         allInstalledApps.filter { it.label in priority }
             .plus(allInstalledApps.filter { it.label !in priority })

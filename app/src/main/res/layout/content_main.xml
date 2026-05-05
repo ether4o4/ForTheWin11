@@ -50,14 +50,14 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Start Menu — CENTERED, 600dp wide, Win11 style -->
+    <!-- Start Menu — full width, fills above taskbar -->
     <include
         android:id="@+id/start_menu_panel"
         layout="@layout/layout_start_menu"
-        android:layout_width="600dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginBottom="2dp"
+        android:layout_marginTop="0dp"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/custom_taskbar"
         app:layout_constraintEnd_toEndOf="parent"
