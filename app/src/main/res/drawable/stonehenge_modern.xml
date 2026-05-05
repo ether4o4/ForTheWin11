@@ -1,56 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Win11 Red Bloom wallpaper — dark background with flowing red abstract shapes -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="1920dp"
-    android:height="1080dp"
-    android:viewportWidth="1920"
-    android:viewportHeight="1080">
+    android:width="1080dp"
+    android:height="2400dp"
+    android:viewportWidth="1080"
+    android:viewportHeight="2400">
 
-    <!-- Deep Obsidian Base -->
-    <path
-        android:pathData="M0,0h1920v1080h-1920z"
-        android:fillColor="#FF050505" />
-
-    <!-- Red Energy Swirl 1 -->
-    <path
-        android:pathData="M-200,1080 C400,400 1200,1200 2100,300"
-        android:strokeWidth="160"
-        android:strokeAlpha="0.5">
-        <aapt:attr name="android:strokeColor">
+    <!-- Dark base gradient (black to very dark red) -->
+    <path android:pathData="M0,0h1080v2400h-1080z">
+        <aapt:attr name="android:fillColor">
             <gradient
                 android:startX="0"
-                android:startY="1080"
-                android:endX="1920"
-                android:endY="300"
+                android:startY="0"
+                android:endX="1080"
+                android:endY="2400"
                 android:type="linear">
-                <item android:offset="0" android:color="#FFFF3B3B" />
-                <item android:offset="1" android:color="#00FF3B3B" />
+                <item android:offset="0" android:color="#FF0A0A0A" />
+                <item android:offset="0.4" android:color="#FF1A0505" />
+                <item android:offset="1" android:color="#FF050505" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Red Energy Swirl 2 -->
+    <!-- Large flowing red ribbon 1 (bottom-right) -->
     <path
-        android:pathData="M-100,1180 C600,200 1400,1000 2200,-100"
-        android:strokeWidth="100"
-        android:strokeAlpha="0.3">
-        <aapt:attr name="android:strokeColor">
+        android:pathData="M300,2400 C500,2000 900,1800 1080,1500 L1080,2400 Z"
+        android:fillAlpha="0.85">
+        <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="0"
-                android:startY="1180"
-                android:endX="1920"
-                android:endY="-100"
+                android:startX="300"
+                android:startY="2400"
+                android:endX="1080"
+                android:endY="1500"
                 android:type="linear">
-                <item android:offset="0" android:color="#FFFF3B3B" />
-                <item android:offset="1" android:color="#00FF3B3B" />
+                <item android:offset="0" android:color="#FFE81123" />
+                <item android:offset="0.5" android:color="#FFCC0F1F" />
+                <item android:offset="1" android:color="#FF8B0A14" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Background Accents -->
+    <!-- Red ribbon 2 (mid-right flowing curve) -->
     <path
-        android:pathData="M0,0h1920v1080h-1920z"
-        android:fillAlpha="0.05"
-        android:fillColor="#FFFFFF" />
+        android:pathData="M600,2400 C700,2100 1000,1900 1080,1700 L1080,2100 C900,2200 700,2300 600,2400 Z"
+        android:fillAlpha="0.7">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="600"
+                android:startY="2400"
+                android:endX="1080"
+                android:endY="1700"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFFF2233" />
+                <item android:offset="1" android:color="#FFAA0E1B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Flowing curve 3 (upper area) -->
+    <path
+        android:pathData="M0,1600 C300,1400 600,1500 800,1300 C1000,1100 1080,1200 1080,1000 L1080,1400 C800,1600 400,1700 0,1800 Z"
+        android:fillAlpha="0.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="1800"
+                android:endX="1080"
+                android:endY="1000"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFE81123" />
+                <item android:offset="1" android:color="#44E81123" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle glow in center -->
+    <path
+        android:pathData="M200,1800 C400,1500 700,1600 900,1400 C1100,1200 800,1800 500,2000 Z"
+        android:fillAlpha="0.3">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="400"
+                android:startY="1500"
+                android:endX="900"
+                android:endY="2000"
+                android:type="radial"
+                android:centerX="600"
+                android:centerY="1700"
+                android:gradientRadius="500">
+                <item android:offset="0" android:color="#FFFF4455" />
+                <item android:offset="1" android:color="#00FF4455" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Deep shadow ribbon (adds depth) -->
+    <path
+        android:pathData="M0,2400 C200,2200 500,2100 700,2000 C900,1900 1080,1800 1080,2000 L1080,2400 Z"
+        android:fillAlpha="0.6">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="2400"
+                android:endX="1080"
+                android:endY="1800"
+                android:type="linear">
+                <item android:offset="0" android:color="#FF3A0A0E" />
+                <item android:offset="1" android:color="#FF1A0305" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
 </vector>

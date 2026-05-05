@@ -11,14 +11,14 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#14000000"
+        android:background="#20FFFFFF"
         android:layout_gravity="top" />
 
     <!-- Main squared bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#FFFFFFFF"
+        android:background="#FF1B1035"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="8dp"
@@ -46,7 +46,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_start"
-                    app:tint="#FF0078D4"
+                    app:tint="#FFFFFFFF"
                     android:contentDescription="Start" />
             </FrameLayout>
 
@@ -69,14 +69,14 @@
                     android:layout_width="14dp"
                     android:layout_height="14dp"
                     android:src="@drawable/ic_win11_search"
-                    app:tint="#88000000"
+                    app:tint="#AAFFFFFF"
                     android:contentDescription="Search" />
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:text="Search"
-                    android:textColor="#88000000"
+                    android:textColor="#AAFFFFFF"
                     android:textSize="12sp"
                     android:fontFamily="sans-serif" />
             </LinearLayout>
@@ -103,7 +103,7 @@
                     android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_taskview"
-                    app:tint="#FF444444"
+                    app:tint="#FFFFFFFF"
                     android:contentDescription="Task View" />
             </FrameLayout>
 
@@ -152,7 +152,7 @@
                     android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_win11_settings"
-                    app:tint="#FF444444"
+                    app:tint="#FFFFFFFF"
                     android:contentDescription="Settings" />
             </FrameLayout>
 
@@ -194,7 +194,7 @@
                     android:layout_height="15dp"
                     android:src="@android:drawable/ic_menu_upload"
                     android:rotation="180"
-                    app:tint="#FF444444"
+                    app:tint="#FFFFFFFF"
                     android:contentDescription="Network" />
 
                 <!-- Volume -->
@@ -204,7 +204,7 @@
                     android:layout_height="15dp"
                     android:layout_marginStart="5dp"
                     android:src="@android:drawable/ic_lock_silent_mode_off"
-                    app:tint="#FF444444"
+                    app:tint="#FFFFFFFF"
                     android:contentDescription="Volume" />
 
                 <!-- Battery -->
@@ -228,7 +228,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="12:00 PM"
-                        android:textColor="#FF1A1A1A"
+                        android:textColor="#FFFFFFFF"
                         android:textSize="12sp"
                         android:fontFamily="sans-serif-medium"
                         android:textStyle="bold" />
@@ -237,7 +237,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="5/4/2026"
-                        android:textColor="#88000000"
+                        android:textColor="#AAFFFFFF"
                         android:textSize="9sp"
                         android:fontFamily="sans-serif" />
                 </LinearLayout>

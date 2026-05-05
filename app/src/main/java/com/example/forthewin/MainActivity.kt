@@ -556,11 +556,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyThemeToTaskbar() {
         val taskbarRoot = binding.appBarMain.contentMain.customTaskbar?.root ?: return
-        val isDark = ThemeManager.isDark(this)
-        val bg = if (isDark) 0xE6202023.toInt() else 0xFFFFFFFF.toInt()
-        val textPri = if (isDark) 0xFFFFFFFF.toInt() else 0xFF1A1A1A.toInt()
-        val textSec = if (isDark) 0x88FFFFFF.toInt() else 0x88000000.toInt()
-        val iconTint = if (isDark) 0xFFFFFFFF.toInt() else 0xFF444444.toInt()
+        val bg = ThemeManager.taskbarBg(this)
+        val textPri = ThemeManager.taskbarTextPrimary(this)
+        val textSec = ThemeManager.taskbarTextSecondary(this)
+        val iconTint = ThemeManager.taskbarIconTint(this)
 
         // Find the main LinearLayout inside FrameLayout (skip top border View)
         if (taskbarRoot is FrameLayout) {
@@ -580,6 +579,9 @@ class MainActivity : AppCompatActivity() {
         // Tray icons
         taskbarRoot.findViewById<ImageView>(R.id.tray_network)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
         taskbarRoot.findViewById<ImageView>(R.id.tray_volume)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
+
+        // Start orb tint (white on dark taskbar)
+        taskbarRoot.findViewById<ImageView>(R.id.btn_start_orb)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
     }
 
     private fun applyThemeToStartMenu() {
