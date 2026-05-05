@@ -1,21 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Titlebar glass: near white with subtle gradient -->
+    <!-- Titlebar: dark red gradient matching WinX theme -->
     <item>
         <shape>
             <gradient
                 android:type="linear"
                 android:angle="270"
-                android:startColor="#F0FFFFFF"
-                android:endColor="#E8F8FF" />
+                android:startColor="#FF9B1020"
+                android:endColor="#FF7A0C18" />
             <corners android:topLeftRadius="14dp" android:topRightRadius="14dp"
                 android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
-        </shape>
-    </item>
-    <!-- Bottom separator line -->
-    <item android:top="34dp">
-        <shape>
-            <solid android:color="#12000000" />
         </shape>
     </item>
 </layer-list>
