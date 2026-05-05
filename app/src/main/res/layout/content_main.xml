@@ -76,14 +76,13 @@
         app:layout_constraintBottom_toTopOf="@+id/custom_taskbar"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Hidden nav host (needed for Settings navigation) -->
+    <!-- Nav host (needed for Settings navigation) — invisible, 1x1dp -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment_content_main"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="1dp"
         android:layout_height="1dp"
-        android:visibility="gone"
-        app:defaultNavHost="true"
+        app:defaultNavHost="false"
         app:navGraph="@navigation/mobile_navigation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
