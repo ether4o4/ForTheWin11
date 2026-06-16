@@ -597,8 +597,9 @@ class MainActivity : AppCompatActivity() {
         taskbarRoot.findViewById<ImageView>(R.id.tray_network)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
         taskbarRoot.findViewById<ImageView>(R.id.tray_volume)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
 
-        // Start orb tint (white on dark taskbar)
-        taskbarRoot.findViewById<ImageView>(R.id.btn_start_orb)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
+        // Start orb tint (white on dark taskbar) — tint the inner logo ImageView,
+        // not its FrameLayout wrapper (btn_start_orb), which is not an ImageView.
+        taskbarRoot.findViewById<ImageView>(R.id.start_orb_icon)?.setColorFilter(iconTint, PorterDuff.Mode.SRC_IN)
     }
 
     private fun applyThemeToStartMenu() {
