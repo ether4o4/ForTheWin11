@@ -206,6 +206,17 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Surface any setup failure on-screen instead of force-closing the launcher.
+        try {
+            initLauncher()
+        } catch (e: Throwable) {
+            android.util.Log.e("MainActivity", "Launcher init failed", e)
+            showFatalError(e)
+            return
+        }
+    }
+
+    private fun initLauncher() {
         statsManager  = SystemStatsManager(this)
         fileIndexer   = FileIndexer(this)
         iconPackManager = (application as LauncherApplication).iconPackManager
@@ -1332,6 +1343,28 @@ class MainActivity : AppCompatActivity() {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         if (intent != null) startActivity(intent)
         else Snackbar.make(binding.root, "App not found", Snackbar.LENGTH_SHORT).show()
+    }
+
+    // ── Fatal-error fallback ──────────────────────────────────────────
+    // If launcher setup throws, show the stack trace on-screen instead of
+    // letting the process force-close — so the failure can be diagnosed.
+    private fun showFatalError(e: Throwable) {
+        val trace = java.io.StringWriter().also { e.printStackTrace(java.io.PrintWriter(it)) }.toString()
+        val message = "ForTheWin failed to start.\n\n$trace"
+        val text = TextView(this).apply {
+            text = message
+            setTextColor(0xFFFFFFFF.toInt())
+            setTextIsSelectable(true)
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            val pad = (16 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+        }
+        val scroll = android.widget.ScrollView(this).apply {
+            setBackgroundColor(0xFF1B1035.toInt())
+            addView(text)
+        }
+        setContentView(scroll)
     }
 
     // ── System ────────────────────────────────────────────────────────
