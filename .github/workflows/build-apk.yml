@@ -1,0 +1,78 @@
+name: Build APK
+
+# Builds the debug APK (which is signed with the auto-generated debug key and
+# is directly installable on a device). The APK is published two ways:
+#   1. As a workflow artifact (downloadable from the run's "Artifacts" section).
+#   2. As an asset on a rolling GitHub Release tagged "apk-debug-latest".
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "claude/**"
+      - master
+    paths-ignore:
+      - "**/*.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses and install SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Locate APK
+        id: apk
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -n1)
+          echo "Found APK: $APK"
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForTheWin-debug-apk
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publish rolling release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="apk-debug-latest"
+          DEST="ForTheWin-debug.apk"
+          cp "${{ steps.apk.outputs.path }}" "$DEST"
+          # Recreate a rolling release so the download URL is stable.
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" "$DEST" \
+            --title "ForTheWin debug APK (latest)" \
+            --notes "Auto-built debug APK from ${{ github.sha }} on branch ${{ github.ref_name }}. Install via: enable 'Install unknown apps', then open the APK." \
+            --prerelease \
+            --target "${{ github.sha }}"
