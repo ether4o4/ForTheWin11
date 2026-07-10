@@ -206,6 +206,17 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // NeverSoft Services boot splash — flashes briefly, then fades out and
+        // hands off to the launcher. Purely a visual overlay; never blocks input.
+        binding.neversoftSplash.postDelayed({
+            binding.neversoftSplash.animate()
+                .alpha(0f)
+                .setDuration(320)
+                .setInterpolator(DecelerateInterpolator())
+                .withEndAction { binding.neversoftSplash.visibility = View.GONE }
+                .start()
+        }, 900)
+
         // Surface any setup failure on-screen instead of force-closing the launcher.
         try {
             initLauncher()
