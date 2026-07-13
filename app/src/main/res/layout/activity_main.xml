@@ -21,48 +21,14 @@ across the layout configurations
 
     </androidx.drawerlayout.widget.DrawerLayout>
 
-    <!-- NeverSoft Services boot splash — drawn over everything, dismissed after a moment -->
-    <LinearLayout
+    <!-- NeverSoft Services CRT boot splash — full-screen WebView drawn over
+         everything, fades out and hands off to the launcher after boot. -->
+    <WebView
         android:id="@+id/neversoft_splash"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/neversoft_splash_bg"
+        android:background="@android:color/black"
         android:clickable="true"
         android:focusable="true"
-        android:elevation="1000dp">
-
-        <TextView
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:background="@drawable/neversoft_splash_badge"
-            android:gravity="center"
-            android:text="N"
-            android:textColor="@color/white"
-            android:textSize="44sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="NeverSoft Services"
-            android:textColor="@color/text_primary"
-            android:textSize="20sp"
-            android:letterSpacing="0.02"
-            android:textStyle="bold" />
-
-        <ProgressBar
-            android:id="@+id/neversoft_splash_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="140dp"
-            android:layout_height="4dp"
-            android:layout_marginTop="24dp"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="66"
-            android:progressDrawable="@drawable/drive_progress_bar" />
-
-    </LinearLayout>
+        android:elevation="1000dp" />
 </FrameLayout>
