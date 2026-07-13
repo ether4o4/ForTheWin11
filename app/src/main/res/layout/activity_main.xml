@@ -20,4 +20,15 @@ across the layout configurations
             android:layout_height="match_parent" />
 
     </androidx.drawerlayout.widget.DrawerLayout>
+
+    <!-- NeverSoft Services CRT boot splash — full-screen WebView drawn over
+         everything, fades out and hands off to the launcher after boot. -->
+    <WebView
+        android:id="@+id/neversoft_splash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="1000dp" />
 </FrameLayout>

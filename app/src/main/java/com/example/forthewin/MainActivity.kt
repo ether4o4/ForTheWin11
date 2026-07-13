@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsManager: SystemStatsManager
     private lateinit var fileIndexer: FileIndexer
     private val handler = Handler(Looper.getMainLooper())
+    private var splashDismissed = false
 
     private lateinit var windowManager: WindowManagerController
     private lateinit var taskbarManager: TaskbarManager
@@ -206,6 +207,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // NeverSoft Services CRT boot splash — a full-screen WebView rendering the
+        // brand terminal splash from assets. It fades out and hands off to the
+        // launcher after boot. Purely a visual overlay; it never blocks the app.
+        setupNeverSoftSplash()
+
         // Surface any setup failure on-screen instead of force-closing the launcher.
         try {
             initLauncher()
@@ -214,6 +220,60 @@ class MainActivity : AppCompatActivity() {
             showFatalError(e)
             return
         }
+    }
+
+    // ── NeverSoft boot splash ─────────────────────────────────────────
+    // Renders the brand CRT terminal splash (assets/neversoft_splash.html) in a
+    // full-screen WebView layered over the launcher. The splash calls
+    // window.__neverSoftSplashDone() when its boot finishes; a Handler fallback
+    // guarantees dismissal even if that never fires. Runs once, then GONE.
+    private fun setupNeverSoftSplash() {
+        val splash = binding.neversoftSplash
+        try {
+            splash.setBackgroundColor(android.graphics.Color.BLACK)
+            splash.isVerticalScrollBarEnabled = false
+            splash.isHorizontalScrollBarEnabled = false
+            splash.settings.javaScriptEnabled = true
+            splash.addJavascriptInterface(object {
+                @android.webkit.JavascriptInterface
+                fun done() {
+                    handler.post { dismissNeverSoftSplash() }
+                }
+            }, "NeverSoftSplashBridge")
+            splash.webViewClient = object : android.webkit.WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    // Bridge the page's completion hook to the native dismissal.
+                    view?.evaluateJavascript(
+                        "window.__neverSoftSplashDone = function(){" +
+                            "try{NeverSoftSplashBridge.done();}catch(e){}};",
+                        null
+                    )
+                }
+            }
+            splash.loadUrl("file:///android_asset/neversoft_splash.html")
+        } catch (e: Throwable) {
+            android.util.Log.e("MainActivity", "Splash setup failed", e)
+            dismissNeverSoftSplash()
+            return
+        }
+        // Robust fallback: dismiss after the splash's ~2.5s boot even if the
+        // page's completion hook never fires. Never traps the launcher.
+        splash.postDelayed({ dismissNeverSoftSplash() }, 2900)
+    }
+
+    private fun dismissNeverSoftSplash() {
+        if (splashDismissed) return
+        splashDismissed = true
+        val splash = binding.neversoftSplash
+        splash.animate()
+            .alpha(0f)
+            .setDuration(320)
+            .setInterpolator(DecelerateInterpolator())
+            .withEndAction {
+                splash.visibility = View.GONE
+                try { splash.destroy() } catch (e: Exception) { }
+            }
+            .start()
     }
 
     private fun initLauncher() {
