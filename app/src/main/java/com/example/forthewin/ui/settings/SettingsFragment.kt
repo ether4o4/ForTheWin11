@@ -1,256 +1,129 @@
 package com.example.forthewin.ui.settings
 
-import android.content.res.ColorStateList
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.Spinner
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.example.forthewin.LauncherApplication
-import com.example.forthewin.MainActivity
 import com.example.forthewin.R
-import com.example.forthewin.ThemeManager
-import com.example.forthewin.databinding.FragmentSettingsBinding
+import com.example.forthewin.WallpaperHelper
+import com.example.forthewin.ui.controllers.TaskbarManager
 
 class SettingsFragment : Fragment() {
 
-    private var _binding: FragmentSettingsBinding? = null
-    private val binding get() = _binding!!
+    private lateinit var viewModel: SettingsViewModel
+    private lateinit var wallpaperPickerButton: Button
+    private lateinit var iconPackSpinner: Spinner
+    private lateinit var alignmentSpinner: Spinner
+    private lateinit var sortSpinner: Spinner
+    private lateinit var categorySpinner: Spinner
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val settingsViewModel = ViewModelProvider(this).get(SettingsViewModel::class.java)
-        _binding = FragmentSettingsBinding.inflate(inflater, container, false)
-        val root: View = binding.root
-
-        val textView: TextView = binding.textSettings
-        settingsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
-
-        setupThemeSwitch()
-        setupIconPackPicker()
-        setupThemePicker()
-        setupStartMenuSettings()
-
-        return root
+    companion object {
+        private const val PICK_WALLPAPER = 1001
+        private const val PICK_ICON_PACK = 1002
     }
 
-    private fun setupThemePicker() {
-        val root = binding.root
-
-        // Theme mode buttons
-        val btnLight = root.findViewById<View>(R.id.btn_theme_light)
-        val btnDark  = root.findViewById<View>(R.id.btn_theme_dark)
-        // Accent buttons
-        val btnBlue  = root.findViewById<View>(R.id.btn_accent_blue)
-        val btnRed   = root.findViewById<View>(R.id.btn_accent_red)
-
-        val ctx = requireContext()
-        val isDark = ThemeManager.isDark(ctx)
-        val isRed  = ThemeManager.isRedAccent(ctx)
-
-        fun updateButtonStates() {
-            val isDarkNow = ThemeManager.isDark(ctx)
-            val isRedNow  = ThemeManager.isRedAccent(ctx)
-            val accent    = ThemeManager.accent(ctx)
-
-            btnLight?.alpha = if (!isDarkNow) 1f else 0.45f
-            btnDark?.alpha  = if (isDarkNow)  1f else 0.45f
-            btnBlue?.alpha  = if (!isRedNow)  1f else 0.45f
-            btnRed?.alpha   = if (isRedNow)   1f else 0.45f
-
-            // Tint selected indicator
-            btnLight?.backgroundTintList = if (!isDarkNow) ColorStateList.valueOf(accent) else null
-            btnDark?.backgroundTintList  = if (isDarkNow)  ColorStateList.valueOf(accent) else null
-        }
-
-        updateButtonStates()
-
-        btnLight?.setOnClickListener {
-            ThemeManager.setDark(ctx, false)
-            updateButtonStates()
-            (requireActivity() as? MainActivity)?.applyTheme(false, ThemeManager.isRedAccent(ctx))
-        }
-        btnDark?.setOnClickListener {
-            ThemeManager.setDark(ctx, true)
-            updateButtonStates()
-            (requireActivity() as? MainActivity)?.applyTheme(true, ThemeManager.isRedAccent(ctx))
-        }
-        btnBlue?.setOnClickListener {
-            ThemeManager.setRedAccent(ctx, false)
-            updateButtonStates()
-            (requireActivity() as? MainActivity)?.applyTheme(ThemeManager.isDark(ctx), false)
-        }
-        btnRed?.setOnClickListener {
-            ThemeManager.setRedAccent(ctx, true)
-            updateButtonStates()
-            (requireActivity() as? MainActivity)?.applyTheme(ThemeManager.isDark(ctx), true)
-        }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
-    private fun setupIconPackPicker() {
-        val iconPackBtn = binding.root.findViewById<View>(R.id.btn_icon_pack) ?: return
-        val iconPackManager = (requireActivity().application as LauncherApplication).iconPackManager
-        updateIconPackLabel(iconPackManager)
-        iconPackBtn.setOnClickListener { showIconPackDialog(iconPackManager) }
-    }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel = ViewModelProvider(this).get(SettingsViewModel::class.java)
 
-    private fun showIconPackDialog(iconPackManager: com.example.forthewin.IconPackManager) {
-        val packs = iconPackManager.getInstalledPacks()
-        val labels = mutableListOf<String>()
-        val packages = mutableListOf<String?>()
-        labels.add("System Default")
-        packages.add(null)
-        for ((label, pkg) in packs) {
-            labels.add(label)
-            packages.add(pkg)
-        }
-        val currentPack = iconPackManager.getActivePack()
-        val checkedItem = packages.indexOf(currentPack).coerceAtLeast(0)
+        wallpaperPickerButton = view.findViewById(R.id.btn_wallpaper_picker)
+        iconPackSpinner = view.findViewById(R.id.spinner_icon_pack)
+        alignmentSpinner = view.findViewById(R.id.spinner_alignment)
+        sortSpinner = view.findViewById(R.id.spinner_file_sort)
+        categorySpinner = view.findViewById(R.id.spinner_file_category)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Icon Pack")
-            .setSingleChoiceItems(labels.toTypedArray(), checkedItem) { dialog, which ->
-                val selected = packages[which]
-                if (selected == null) iconPackManager.clearPack()
-                else iconPackManager.loadPack(selected)
-                updateIconPackLabel(iconPackManager)
-                dialog.dismiss()
-                (requireActivity() as? MainActivity)?.refreshIcons()
+        wallpaperPickerButton.setOnClickListener {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            startActivityForResult(intent, PICK_WALLPAPER)
+        }
+
+        setupIconPackSpinner()
+        setupAlignmentSpinner()
+        setupSortSpinner()
+        setupCategorySpinner()
     }
 
-    private fun updateIconPackLabel(iconPackManager: com.example.forthewin.IconPackManager) {
-        val iconPackBtn = binding.root.findViewById<TextView>(R.id.btn_icon_pack) ?: return
-        val activePack = iconPackManager.getActivePack()
-        iconPackBtn.text = if (activePack == null) {
-            "Icon Pack: System Default"
-        } else {
-            val packs = iconPackManager.getInstalledPacks()
-            val name = packs.firstOrNull { it.second == activePack }?.first ?: activePack
-            "Icon Pack: $name"
-        }
-    }
-
-    // ── Start Menu settings ────────────────────────────────────────
-    private fun setupStartMenuSettings() {
-        val ctx = requireContext()
-        val root = binding.root
-        val accent = ThemeManager.accent(ctx)
-
-        // Icon size buttons
-        val btnSmall  = root.findViewById<View>(R.id.btn_icon_small)
-        val btnMedium = root.findViewById<View>(R.id.btn_icon_medium)
-        val btnLarge  = root.findViewById<View>(R.id.btn_icon_large)
-
-        fun updateIconSizeButtons() {
-            val current = ThemeManager.startIconSize(ctx)
-            val a = ThemeManager.accent(ctx)
-            btnSmall?.backgroundTintList  = ColorStateList.valueOf(if (current == 32) a else 0x44FFFFFF)
-            btnMedium?.backgroundTintList = ColorStateList.valueOf(if (current == 42) a else 0x44FFFFFF)
-            btnLarge?.backgroundTintList  = ColorStateList.valueOf(if (current == 54) a else 0x44FFFFFF)
-        }
-        updateIconSizeButtons()
-
-        btnSmall?.setOnClickListener {
-            ThemeManager.setStartIconSize(ctx, 32); updateIconSizeButtons()
-            (requireActivity() as? MainActivity)?.refreshStartMenu()
-        }
-        btnMedium?.setOnClickListener {
-            ThemeManager.setStartIconSize(ctx, 42); updateIconSizeButtons()
-            (requireActivity() as? MainActivity)?.refreshStartMenu()
-        }
-        btnLarge?.setOnClickListener {
-            ThemeManager.setStartIconSize(ctx, 54); updateIconSizeButtons()
-            (requireActivity() as? MainActivity)?.refreshStartMenu()
-        }
-
-        // Column count buttons
-        val btnCols3 = root.findViewById<View>(R.id.btn_cols_3)
-        val btnCols4 = root.findViewById<View>(R.id.btn_cols_4)
-        val btnCols5 = root.findViewById<View>(R.id.btn_cols_5)
-
-        fun updateColButtons() {
-            val current = ThemeManager.startColumns(ctx)
-            val a = ThemeManager.accent(ctx)
-            btnCols3?.backgroundTintList = ColorStateList.valueOf(if (current == 3) a else 0x44FFFFFF)
-            btnCols4?.backgroundTintList = ColorStateList.valueOf(if (current == 4) a else 0x44FFFFFF)
-            btnCols5?.backgroundTintList = ColorStateList.valueOf(if (current == 5) a else 0x44FFFFFF)
-        }
-        updateColButtons()
-
-        btnCols3?.setOnClickListener {
-            ThemeManager.setStartColumns(ctx, 3); updateColButtons()
-            (requireActivity() as? MainActivity)?.refreshStartMenu()
-        }
-        btnCols4?.setOnClickListener {
-            ThemeManager.setStartColumns(ctx, 4); updateColButtons()
-            (requireActivity() as? MainActivity)?.refreshStartMenu()
-        }
-        btnCols5?.setOnClickListener {
-            ThemeManager.setStartColumns(ctx, 5); updateColButtons()
-            (requireActivity() as? MainActivity)?.refreshStartMenu()
-        }
-    }
-
-    private var isNightMode = false
-
-    private fun setupThemeSwitch() {
-        val toggle = binding.themeToggle
-        val container = toggle.themeSwitchContainer
-        val handle = toggle.switchHandle
-        val sun = toggle.sunImage
-        val moon = toggle.moonImage
-        val clouds = toggle.cloudsImage
-        val stars = toggle.starsContainer
-
-        container.setOnClickListener {
-            isNightMode = !isNightMode
-            val duration = 500L
-            val interp = android.view.animation.AccelerateDecelerateInterpolator()
-
-            if (isNightMode) {
-                handle.animate().translationX(120f - 46f - 8f).setDuration(duration).setInterpolator(interp).start()
-                sun.animate().alpha(0f).translationX(-46f).setDuration(duration).start()
-                moon.animate().alpha(1f).translationX(0f).setDuration(duration).start()
-                clouds.animate().translationY(100f).alpha(0f).setDuration(duration).start()
-                stars.animate().alpha(1f).setDuration(duration).start()
-                animateBackgroundColor(container,
-                    resources.getColor(R.color.switch_day_bg, null),
-                    resources.getColor(R.color.switch_night_bg, null), duration)
-            } else {
-                handle.animate().translationX(0f).setDuration(duration).setInterpolator(interp).start()
-                sun.animate().alpha(1f).translationX(0f).setDuration(duration).start()
-                moon.animate().alpha(0f).translationX(46f).setDuration(duration).start()
-                clouds.animate().translationY(0f).alpha(1f).setDuration(duration).start()
-                stars.animate().alpha(0f).setDuration(duration).start()
-                animateBackgroundColor(container,
-                    resources.getColor(R.color.switch_night_bg, null),
-                    resources.getColor(R.color.switch_day_bg, null), duration)
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICK_WALLPAPER && resultCode == android.app.Activity.RESULT_OK) {
+            val uri = data?.data?.toString()
+            viewModel.saveWallpaperUri(uri)
+            if (uri != null) {
+                WallpaperHelper.setFromUri(requireContext(), Uri.parse(uri))
             }
         }
     }
 
-    private fun animateBackgroundColor(view: View, colorFrom: Int, colorTo: Int, duration: Long) {
-        val anim = android.animation.ValueAnimator.ofObject(android.animation.ArgbEvaluator(), colorFrom, colorTo)
-        anim.duration = duration
-        anim.addUpdateListener { v ->
-            view.backgroundTintList = ColorStateList.valueOf(v.animatedValue as Int)
+    private fun setupIconPackSpinner() {
+        val items = listOf("Default", "Pick from device...")
+        iconPackSpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, items).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
-        anim.start()
+        iconPackSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                if (pos == 1) {
+                    startActivityForResult(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:com.example.forthewin")
+                    }, PICK_ICON_PACK)
+                }
+            }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    private fun setupAlignmentSpinner() {
+        val items = TaskbarManager.Alignment.values().map { it.name }
+        alignmentSpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, items).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        alignmentSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                viewModel.saveAlignment(items[pos])
+            }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupSortSpinner() {
+        val labels = listOf("Date (newest)", "Date (oldest)", "Name (A-Z)", "Name (Z-A)", "Size (largest)", "Size (smallest)")
+        val values = listOf("DATE_DESC", "DATE_ASC", "NAME_ASC", "NAME_DESC", "SIZE_DESC", "SIZE_ASC")
+        sortSpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, labels).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        sortSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                viewModel.saveSortOrder(values[pos])
+            }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupCategorySpinner() {
+        val items = listOf("All", "Documents", "Images", "Audio", "Video", "Archives")
+        categorySpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, items).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        categorySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                viewModel.saveCategoryFilter(if (pos == 0) null else items[pos])
+            }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
     }
 }

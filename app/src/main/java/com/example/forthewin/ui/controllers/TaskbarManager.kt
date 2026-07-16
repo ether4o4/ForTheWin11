@@ -1,60 +1,75 @@
 package com.example.forthewin.ui.controllers
 
 import android.content.Context
-import android.content.res.ColorStateList
+import android.content.SharedPreferences
+import android.os.Build
+import android.view.Gravity
 import android.view.View
-import android.widget.ImageView
-import android.widget.LinearLayout
-import androidx.core.content.res.ResourcesCompat
-import com.example.forthewin.IconPackManager
+import android.view.Window
+import android.widget.FrameLayout
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.forthewin.R
-import com.example.forthewin.databinding.LayoutCustomTaskbarBinding
 
 class TaskbarManager(
     private val context: Context,
-    private val binding: LayoutCustomTaskbarBinding,
-    private val onAppClick: (String) -> Unit
+    private val window: Window,
+    private val taskbarView: View
 ) {
-    private val taskbarIcons = mutableMapOf<View, ImageView>()
 
-    fun addWindowIcon(title: String, iconRes: Int, window: View) {
-        val icon = ImageView(context)
-        val density = context.resources.displayMetrics.density
-        val size = (48 * density).toInt()
-        val margin = (4 * density).toInt()
-        val padding = (8 * density).toInt()
-        
-        val params = LinearLayout.LayoutParams(size, size)
-        params.setMargins(margin, 0, margin, 0)
-        icon.layoutParams = params
-        icon.setImageResource(iconRes)
-        icon.setPadding(padding, padding, padding, padding)
-        icon.background = ResourcesCompat.getDrawable(context.resources, R.drawable.sidebar_item_active, null)
-        icon.backgroundTintList = ColorStateList.valueOf(ResourcesCompat.getColor(context.resources, R.color.vista_red_accent, null))
-        icon.tag = window
-        
-        icon.setOnClickListener {
-            window.visibility = if (window.visibility == View.VISIBLE) View.GONE else View.VISIBLE
-            if (window.visibility == View.VISIBLE) {
-                window.bringToFront()
-            }
-        }
-        
-        binding.taskbarItemsContainer.addView(icon)
-        taskbarIcons[window] = icon
+    companion object {
+        private const val PREFS_NAME = "taskbar_prefs"
+        private const val KEY_ALIGNMENT = "start_button_alignment"
     }
 
-    fun removeWindowIcon(window: View) {
-        taskbarIcons[window]?.let { icon ->
-            binding.taskbarItemsContainer.removeView(icon)
-            taskbarIcons.remove(window)
+    enum class Alignment { LEFT, CENTER, RIGHT }
+
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    var alignment: Alignment
+        get() = try {
+            Alignment.valueOf(
+                prefs.getString(KEY_ALIGNMENT, Alignment.LEFT.name) ?: Alignment.LEFT.name
+            )
+        } catch (_: Exception) { Alignment.LEFT }
+        set(value) {
+            prefs.edit().putString(KEY_ALIGNMENT, value.name).apply()
+            applyAlignment()
+        }
+
+    init {
+        applyModernInsets()
+        applyAlignment()
+    }
+
+    private fun applyModernInsets() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val controller = WindowInsetsControllerCompat(window, window.decorView)
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            )
         }
     }
 
-    /** Re-apply icon pack icons to all active taskbar window icons */
-    fun refreshIcons(iconPackManager: IconPackManager) {
-        // Taskbar static icons (start, search, etc.) are vector drawables — no refresh needed
-        // Dynamic window icons are set by iconRes, not package — nothing to remap here
-        // This hook is available for future per-package taskbar pinning
+    private fun applyAlignment() {
+        val startButton = taskbarView.findViewById<View>(R.id.start_button) ?: return
+        val lp = startButton.layoutParams as? FrameLayout.LayoutParams ?: return
+        lp.gravity = when (alignment) {
+            Alignment.LEFT -> Gravity.START or Gravity.CENTER_VERTICAL
+            Alignment.CENTER -> Gravity.CENTER
+            Alignment.RIGHT -> Gravity.END or Gravity.CENTER_VERTICAL
+        }
+        startButton.layoutParams = lp
     }
 }
